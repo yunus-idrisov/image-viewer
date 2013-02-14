@@ -29,9 +29,6 @@ GLboolean isLMBPressed = GL_FALSE;
 
 int main(int argc, char *argv[]){
 	/*openWalkDir("/home/yunus/Pictures/");*/
-	/*openWalkDir("./images");*/
-	openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");
-	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
 	if( !glfwInit() ){
 		fprintf(stderr, "%s\n", "Failed to initialize GLFW.");
 		return -1;
@@ -52,6 +49,10 @@ int main(int argc, char *argv[]){
 		glfwTerminate();
 		return -1;
 	}
+
+	/*openWalkDir("./images");*/
+	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
+	openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");
 
 	glfwSetWindowTitle("Framebuffer.");
 	glfwSetKeyCallback( KeyboardInputHandler );

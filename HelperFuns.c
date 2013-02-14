@@ -160,10 +160,76 @@ TextureInfo loadTexture(const char *texturePath){
 	}
 
 	FIBITMAP* bitmap = FreeImage_Load(fif, texturePath, 0);
+
 	if( bitmap == 0 ){
 		fprintf(stderr, "Error: image \"%s\" isn't loaded.\n", texturePath);
 		return texInfo;
 	}
+
+	GLint width  = FreeImage_GetWidth(bitmap);
+	GLint height = FreeImage_GetHeight(bitmap);
+
+	// Pointer to texture colors.
+	GLubyte* imgData = (GLubyte*)FreeImage_GetBits(bitmap);
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	// For bmp, jpg.
+
+	// Compressed image. Less memory but more time to load.
+	/*glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, imgData);*/
+
+	// Uncompressed image. More memory but less time to load.
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, imgData);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	FreeImage_Unload(bitmap);
+	bitmap = 0;
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	texInfo.textureID = texture;
+	texInfo.width = width;
+	texInfo.height = height;
+	return texInfo;
+}
+
+FIBITMAP* getFIBITMAP(const char *texturePath){
+	// Функция для обработки ошибок.
+	FreeImage_SetOutputMessage(FreeImageErrorHandler);
+
+	FREE_IMAGE_FORMAT fif = 0;
+
+	switch( isSupTexture(texturePath) ){
+		case NOT_SUPPORTED:
+			fprintf(stderr, "Error: image format isn't supported yet.\n");
+			return 0;
+			break;
+		case SUP_BMP:
+			fif = FIF_BMP;
+			break;
+		case SUP_JPG:
+			fif = FIF_JPEG;
+			break;
+	}
+
+	FIBITMAP* bitmap = FreeImage_Load(fif, texturePath, 0);
+
+	if( bitmap == 0 ){
+		fprintf(stderr, "Error: image \"%s\" isn't loaded.\n", texturePath);
+		return 0;
+	}else
+		return bitmap;
+}
+
+TextureInfo createGLTexture(FIBITMAP* bitmap){
+	TextureInfo texInfo = {0,0,0};
+	if( bitmap == 0 )
+		return texInfo;
 
 	GLint width  = FreeImage_GetWidth(bitmap);
 	GLint height = FreeImage_GetHeight(bitmap);
@@ -195,6 +261,7 @@ TextureInfo loadTexture(const char *texturePath){
 	texInfo.height = height;
 	return texInfo;
 }
+
 
 static void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char* message){
 	printf("\n*** ");
