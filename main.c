@@ -54,7 +54,7 @@ int main(int argc, char *argv[]){
 	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
 	openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");
 
-	glfwSetWindowTitle("Framebuffer.");
+	glfwSetWindowTitle("Framebuffer");
 	glfwSetKeyCallback( KeyboardInputHandler );
 	glfwSetMouseButtonCallback( MouseButtonsHandler );
 	glfwSetMousePosCallback( MousePosHandler );
