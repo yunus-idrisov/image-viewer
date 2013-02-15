@@ -20,10 +20,7 @@ static char			imagePath[NAME_MAX];
  * Нулевой элемент массива хранит предыдущее
  * изображение, 1 - текущее, 2 - следующее.
  */
-static TextureInfo  curImage = {0,0,0};
-static pthread_t 	thread_id1 = 0;
-static pthread_t 	thread_id2 = 0;
-static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+static pthread_t 	thread_id = 0;
 static FIBITMAP*	pNextFIBITMAP = 0;
 static FIBITMAP*	pPrevFIBITMAP = 0;
 /*
@@ -36,7 +33,6 @@ ListNode*	getNextNodeCycle(ListNode* curNode);
 ListNode*	getPrevNodeCycle(ListNode* curNode);
 
 static void* thread_func(void* arg){
-	pthread_mutex_lock( &mtx );
 	switch( imageToLoad ){
 		case 0:
 			if( curImagePointer != 0 ){
@@ -73,7 +69,6 @@ static void* thread_func(void* arg){
 			}
 			break;
 	}
-	pthread_mutex_unlock( &mtx );
 	return 0;
 }
 
@@ -107,11 +102,8 @@ int openWalkDir(const char* path){
 	}
 
 	curImagePointer = imageNames->head;
-	// Загрузка первого изображения.
+
 	if( curImagePointer != 0 ){ // Если список изображений не пуст.
-		strcat(imagePath, curImagePointer->str);
-		curImage = loadTexture( imagePath );
-		imagePath[imagePathLen] = '\0';
 
 		ListNode* prevImagePointer = getPrevNodeCycle( curImagePointer );
 		strcat(imagePath, prevImagePointer->str);
@@ -129,38 +121,37 @@ int openWalkDir(const char* path){
 }
 
 TextureInfo getNextImage(){
-	pthread_mutex_lock( &mtx );
 	TextureInfo texInfo = {0,0,0};
 
 	void* status;
-	pthread_join(thread_id1, &status);
+	pthread_join(thread_id, &status);
 	texInfo = createGLTexture( pNextFIBITMAP );
 
 	imageToLoad = 2;
-	if( pthread_create(&thread_id1, NULL, thread_func, NULL) != 0 )
+	if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
 		fprintf(stderr, "create error\n");
 
-	pthread_mutex_unlock( &mtx );
 	return texInfo;
 }
 
 TextureInfo getPrevImage(){
-	pthread_mutex_lock( &mtx );
 	TextureInfo texInfo = {0,0,0};
 
 	void* status;
-	pthread_join(thread_id2, &status);
+	pthread_join(thread_id, &status);
 	texInfo = createGLTexture( pPrevFIBITMAP );
 
 	imageToLoad = 0;
-	if( pthread_create(&thread_id2, NULL, thread_func, NULL) != 0 )
+	if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
 		fprintf(stderr, "create error\n");
 
-	pthread_mutex_unlock( &mtx );
 	return texInfo;
 }
 
 int closeWalkDir(){
+	void* status;
+	pthread_join( thread_id, NULL );
+
 	deleteStrList(&imageNames);
 
 	if( closedir(dir) != 0 ){
@@ -168,6 +159,11 @@ int closeWalkDir(){
 		fprintf(stderr, "%s.\n", strerror(errno));
 		return -1;
 	}
+
+	FreeImage_Unload( pPrevFIBITMAP );
+	pPrevFIBITMAP = 0;
+	FreeImage_Unload( pNextFIBITMAP );
+	pNextFIBITMAP = 0;
 	return 1;
 }
 
