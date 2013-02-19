@@ -16,6 +16,10 @@ Vector3f target = {0,0,0}, eye = {1,0,0}, up = {0,1,0};
 
 TextureInfo gTexInfo = {0,0,0};
 
+void Render();
+extern Display* display;
+Window win;
+
 static void GLFWCALL KeyboardInputHandler(int key, int state);
 static void GLFWCALL MouseWheelHandler(int pos);
 static void GLFWCALL MouseButtonsHandler(int button, int action);
@@ -28,10 +32,35 @@ GLboolean isRunning = GL_TRUE;
 GLboolean isLMBPressed = GL_FALSE;
 
 int main(int argc, char *argv[]){
-	/*openWalkDir("/home/yunus/Pictures/");*/
-	/*openWalkDir("./images");*/
-	openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");
-	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
+	win = createWindow(800, 600, "Picture");
+	GLXContext glctx_33 = createOpenGLContext(3,3);
+
+	printf("Making context current.\n");
+	glXMakeCurrent( display, win, glctx_33 );
+
+	XEvent xev;
+	XWindowAttributes wa;
+	// Основной цикл приложения.
+	while(1){
+		XNextEvent(display, &xev);
+		if( xev.type == Expose ){
+			XGetWindowAttributes(display, win, &wa);
+			glViewport(0,0, wa.width, wa.height);
+			glClearColor ( 0.5, 1.0, 0.0, 1 );
+			glClear( GL_COLOR_BUFFER_BIT );
+			glXSwapBuffers( display, win );
+		}
+		if( xev.type == KeyPress ){
+			if( XLookupKeysym(&xev.xkey, 0) == XK_Escape )
+				break;
+		}
+	}
+
+  	glXMakeCurrent( display, 0, 0 );
+  	glXDestroyContext( display, glctx_33 );
+  	XDestroyWindow( display, win );
+  	XCloseDisplay( display );
+
 	if( !glfwInit() ){
 		fprintf(stderr, "%s\n", "Failed to initialize GLFW.");
 		return -1;
@@ -53,7 +82,12 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 
-	glfwSetWindowTitle("Framebuffer.");
+	/*openWalkDir("/home/yunus/Pictures/");*/
+	/*openWalkDir("./images");*/
+	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
+	openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");
+
+	glfwSetWindowTitle("Framebuffer");
 	glfwSetKeyCallback( KeyboardInputHandler );
 	glfwSetMouseButtonCallback( MouseButtonsHandler );
 	glfwSetMousePosCallback( MousePosHandler );
@@ -154,9 +188,11 @@ int main(int argc, char *argv[]){
 	}
 
 	// Очистка.
+
 	glDeleteBuffers(1, &vertexBuffer);
 	glDeleteProgram(shProgram);
 	glDeleteVertexArrays(1, &VertexArrayID);
+	glDeleteTextures(1, &gTexInfo.textureID);
 	glfwTerminate();
 	closeWalkDir();
 
@@ -250,3 +286,38 @@ static void ResetCamera(){
 	imageScale = 1.0f;
 	Mat4x4Ortho(&orthoMat, winWidth/(float)winHeight*imageScale, 1*imageScale, 0.1f, 10.0f);
 }
+
+/*
+void Render(){
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	Mat4x4View(&viewMat, &eye, &target, &up);
+	Mat4x4Mult(&PVW, &viewMat, &worldMat);
+	Mat4x4Mult(&PVW, &orthoMat, &PVW);
+	// Используем созданный нами шейдер для рендеринга.
+	glUseProgram(shProgram);
+	glUniformMatrix4fv(PVWID, 1, GL_TRUE, PVW.m);
+	glUniform1i(winWidthID, winWidth);
+	glUniform1i(winHeightID, winHeight);
+	glUniform1i(imageWidthID, gTexInfo.width);
+	glUniform1i(imageHeihgtID, gTexInfo.height);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, gTexInfo.textureID);
+	glUniform1i(imageSmp, 0);
+
+	// Первый параметр передаваемый в шейдер.
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(3*6*sizeof(GLfloat)));
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	
+	glXSwapBuffers( display, win );
+}
+*/
