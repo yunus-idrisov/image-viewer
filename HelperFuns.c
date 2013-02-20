@@ -116,7 +116,8 @@ Window createWindow(GLuint width, GLuint height, const char* title){
 	XSetWindowAttributes swa;
 	swa.colormap = cmap;
 	swa.border_pixel = 0;
-	swa.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask;
+	swa.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask | PointerMotionMask
+					   | ButtonPressMask | ButtonReleaseMask;
 
 	printf("Creating window.\n");
 	win = XCreateWindow(display, RootWindow(display, vi->screen),
@@ -265,7 +266,7 @@ GLXContext createOpenGLContext(int ver_major, int ver_minor){
 	return glctx;
 }
 
-GLuint CreateProgram(const char *vertex_shader_path, const char *fragment_shader_path){
+GLuint CreateShader(const char *vertex_shader_path, const char *fragment_shader_path){
 	// Сначала создаём вершинный шейдер.
 
 	// Считываем код вер. шейдера.
@@ -340,19 +341,19 @@ GLuint CreateProgram(const char *vertex_shader_path, const char *fragment_shader
 	}
 
 	// Создаём шейдерную программу.
-	GLuint program = glCreateProgram();
-	glAttachShader(program, verShader);
-	glAttachShader(program, fragShader);
-	glLinkProgram(program);
+	GLuint shader = glCreateProgram();
+	glAttachShader(shader, verShader);
+	glAttachShader(shader, fragShader);
+	glLinkProgram(shader);
 
 	// Проверём не возникли ли ошибки во время компоновки.
-	glGetProgramiv(program, GL_LINK_STATUS, &result);
+	glGetProgramiv(shader, GL_LINK_STATUS, &result);
 	if( result == GL_FALSE ){
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+		glGetProgramiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
 		GLchar *errMessage = (GLchar*)malloc(infoLogLength + 1);
-		glGetProgramInfoLog(program, infoLogLength, NULL, errMessage);
+		glGetProgramInfoLog(shader, infoLogLength, NULL, errMessage);
 		errMessage[infoLogLength] = '\0';
-		fprintf(stderr, "Error in shader program: %s\n", errMessage);
+		fprintf(stderr, "Error in shader: %s\n", errMessage);
 		free(errMessage);
 		return 0;
 	}
@@ -360,7 +361,7 @@ GLuint CreateProgram(const char *vertex_shader_path, const char *fragment_shader
 	glDeleteShader(verShader);
 	glDeleteShader(fragShader);
 
-	return program;
+	return shader;
 }
 
 static void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char* message);

@@ -9,10 +9,10 @@
 Window createWindow(GLuint width, GLuint height, const char* title);
 GLXContext createOpenGLContext(int ver_major, int ver_minor);
 
-// Функция CreateProgram создаёт шейдерную программу из 
+// Функция CreateShader создаёт шейдерную программу из 
 // вершинного и фрагментного шейдеров.
 // Если произошла ошибка возвращается 0.
-GLuint CreateProgram(const char *vertex_shader_path, const char *fragment_shader_path);
+GLuint CreateShader(const char *vertex_shader_path, const char *fragment_shader_path);
 
 typedef struct{
 	GLuint textureID;

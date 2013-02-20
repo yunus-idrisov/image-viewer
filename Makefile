@@ -6,7 +6,7 @@
 CFLAGS := -D GL_GLEXT_PROTOTYPES -std=c99 2>log
 
 main.out : main.o math.o helperfuns.o strlist.o directorywalk.o
-	gcc $^ -o $@ -lGL -lfreeimage -lglfw $(CFLAGS)
+	gcc $^ -o $@ -lGL -lfreeimage $(CFLAGS)
 
 main.o : main.c
 	gcc -c $< -o $@ $(CFLAGS)
