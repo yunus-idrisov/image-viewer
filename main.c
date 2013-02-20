@@ -110,18 +110,29 @@ int main(int argc, char *argv[]){
 
 	PVWID = glGetUniformLocation(shader, "PVW");
 
+	glViewport(0,0, winWidth, winHeight);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
 	XEvent xev;
 	XWindowAttributes wa;
 	// Основной цикл приложения.
 	while(1){
 		XNextEvent(display, &xev);
 		if( xev.type == Expose ){
-			/*XGetWindowAttributes(display, win, &wa);*/
-			/*glViewport(0,0, wa.width, wa.height);*/
-			/*winWidth = wa.width;*/
-			/*winHeight = wa.height;*/
-			/*Mat4x4Ortho(&orthoMat, winWidth/(float)winHeight*imageScale, 1*imageScale, 0.1f, 10.0f);*/
+			XGetWindowAttributes(display, win, &wa);
+		 	float new_r = wa.width/(float)wa.height;
+		 	for(int i = 2; i <= 17; i += 3)
+				vertices_coords[i] *= new_r/r;
+			r = new_r;
+
+			glDeleteBuffers(1, &verBuffer);
+			glBindBuffer(GL_ARRAY_BUFFER, verBuffer);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_coords), vertices_coords, GL_STATIC_DRAW);
+
+			glViewport(0,0, wa.width, wa.height);
+			winWidth = wa.width;
+			winHeight = wa.height;
+			Mat4x4Ortho(&orthoMat, winWidth/(float)winHeight*imageScale, 1*imageScale, 0.1f, 10.0f);
 			Render();
 		}
 
@@ -157,10 +168,16 @@ int main(int argc, char *argv[]){
 				isLMBPressed = GL_FALSE;
 		}
 
+		static int skipOne = 0;
 		if( xev.type == MotionNotify ){
-			MousePosHandler( xev.xmotion.x, xev.xmotion.y );
-			if( isLMBPressed )
-				Render();
+			if( skipOne == 0 ){
+				MousePosHandler( xev.xmotion.x, xev.xmotion.y );
+				if( isLMBPressed )
+					Render();
+			}
+			skipOne++;
+			if( skipOne > 1 )
+				skipOne = 0;
 		}
 
 		struct timeval start, end;
@@ -275,6 +292,7 @@ void Render(){
 
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
 	glXSwapBuffers( display, win );
 }
