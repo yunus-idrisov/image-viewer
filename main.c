@@ -16,6 +16,7 @@ Vector3f target = {0,0,0}, eye = {1,0,0}, up = {0,1,0};
 GLuint verBuffer;
 GLuint shader;
 
+// Ссылки на переменные из шейдера.
 GLuint winWidthID;
 GLuint winHeightID;
 GLuint imageWidthID;  
@@ -23,6 +24,7 @@ GLuint imageHeihgtID;
 GLuint imageSmp;
 GLuint PVWID;
 
+// Отображаемая текстура.
 TextureInfo gTexInfo = {0,0,0};
 
 void Render();
@@ -36,7 +38,6 @@ static void MousePosHandler(int x, int y);
 // Функция для сбрасывания параметров камеры(положение и т.д).
 static void ResetCamera();
 
-GLboolean isRunning = GL_TRUE;
 GLboolean isLMBPressed = GL_FALSE;
 
 int main(int argc, char *argv[]){
@@ -120,6 +121,8 @@ int main(int argc, char *argv[]){
 		XNextEvent(display, &xev);
 		if( xev.type == Expose ){
 			XGetWindowAttributes(display, win, &wa);
+			// При изменении размеров окна необходимо
+			// изменить координаты отображаемой области.
 		 	float new_r = wa.width/(float)wa.height;
 		 	for(int i = 2; i <= 17; i += 3)
 				vertices_coords[i] *= new_r/r;

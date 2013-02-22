@@ -6,7 +6,9 @@
 #include <X11/Xutil.h>
 #include <GL/glx.h>
 
+// Создаёт окно. При ошибке возвращается 0.
 Window createWindow(GLuint width, GLuint height, const char* title);
+// Создаёт контекст OpenGL. При ошибке возвращается 0.
 GLXContext createOpenGLContext(int ver_major, int ver_minor);
 
 // Функция CreateShader создаёт шейдерную программу из 
