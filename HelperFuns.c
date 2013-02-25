@@ -11,22 +11,22 @@
 #define GLX_CONTEXT_MAJOR_VERSION_ARB 0x2091
 #define GLX_CONTEXT_MINOR_VERSION_ARB 0x2092
 
-Display* 	display = NULL;
+extern WindowInfo winInfo;
 static GLXFBConfig bestFbc;
 
 Window createWindow(GLuint width, GLuint height, const char* title){
 	Window win;
 
-	if( (display = XOpenDisplay(NULL)) == NULL ){
+	if( (winInfo.display = XOpenDisplay(NULL)) == NULL ){
 		fprintf(stderr, "Cannot connect to X server %s\n", XDisplayName(NULL) );
 		return 0;
 	}
 
-	int defScreen = XDefaultScreen( display );
+	int defScreen = XDefaultScreen( winInfo.display );
 
 	// Извлечение версии GLX.
 	int glx_major, glx_minor;
-	if( !glXQueryVersion(display, &glx_major, &glx_minor) ){
+	if( !glXQueryVersion(winInfo.display, &glx_major, &glx_minor) ){
 		fprintf(stderr, "Query GLX version error.\n");
 		return 0;
 	}
@@ -62,7 +62,7 @@ Window createWindow(GLuint width, GLuint height, const char* title){
 
 	printf("Getting matching framebuffer(FB) configs.\n");
 	int fbcount = 0;
-	GLXFBConfig* fbc = glXChooseFBConfig(display, defScreen, visual_attributes, &fbcount);
+	GLXFBConfig* fbc = glXChooseFBConfig(winInfo.display, defScreen, visual_attributes, &fbcount);
 	if( fbc == NULL ){
 		printf("Failed to retrieve a FB configs.\n");
 		return 0;
@@ -73,11 +73,11 @@ Window createWindow(GLuint width, GLuint height, const char* title){
 	printf("Getting XVisualInfos:\n");
 	int best_fbc = -1, worst_fbc = -1, best_num_samp = -1, worst_num_samp = 999;
 	for(int i = 0; i < fbcount; i++){
-		XVisualInfo* vi = glXGetVisualFromFBConfig(display, fbc[i]);
+		XVisualInfo* vi = glXGetVisualFromFBConfig(winInfo.display, fbc[i]);
 		if( vi ){
 			int samp_buf, samples;
-			glXGetFBConfigAttrib( display, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf);
-			glXGetFBConfigAttrib( display, fbc[i], GLX_SAMPLES, &samples);
+			glXGetFBConfigAttrib( winInfo.display, fbc[i], GLX_SAMPLE_BUFFERS, &samp_buf);
+			glXGetFBConfigAttrib( winInfo.display, fbc[i], GLX_SAMPLES, &samples);
 			printf("Matching fbconfig %d, visual ID 0x%x: SAMPLE_BUFFERS = %d,"
 				   " SAMPLES = %d\n", i, vi->visualid, samp_buf, samples);
 
@@ -102,14 +102,14 @@ Window createWindow(GLuint width, GLuint height, const char* title){
 	XFree(fbc);
 
 	// Выбираем лучший visual.
-	XVisualInfo *vi = glXGetVisualFromFBConfig(display, bestFbc);
+	XVisualInfo *vi = glXGetVisualFromFBConfig(winInfo.display, bestFbc);
 	printf("Chosen visual ID = 0x%x\n", vi->visualid);
 
 	// Создаём colormap.
 	printf("Creating colormap.\n");
 	Colormap cmap;
-	cmap = XCreateColormap( display, 
-							RootWindow(display, vi->screen),
+	cmap = XCreateColormap( winInfo.display, 
+							RootWindow(winInfo.display, vi->screen),
 							vi->visual,
 							AllocNone );
 
@@ -120,21 +120,19 @@ Window createWindow(GLuint width, GLuint height, const char* title){
 					   | ButtonPressMask | ButtonReleaseMask;
 
 	printf("Creating window.\n");
-	win = XCreateWindow(display, RootWindow(display, vi->screen),
+	win = XCreateWindow(winInfo.display, RootWindow(winInfo.display, vi->screen),
 							   0, 0, width, height, 0, vi->depth, InputOutput,
 							   vi->visual,
 							   CWBorderPixel | CWColormap | CWEventMask, &swa);
 
 	XFree(vi);
-	XFreeColormap( display, cmap );
+	XFreeColormap( winInfo.display, cmap );
 	if( win == NULL ){
 		fprintf(stderr, "Failed to create window.\n");
 		return 0;
 	}
 
-	XStoreName(display, win, title);
-	printf("Mapping window.\n");
-	XMapWindow( display, win );
+	XStoreName(winInfo.display, win, title);
 
 	// Window hints.
 	XSizeHints* size_hints;
@@ -158,7 +156,7 @@ Window createWindow(GLuint width, GLuint height, const char* title){
 
 	Pixmap icon_pixmap;
 
-	icon_pixmap = XCreateBitmapFromData(display, win,
+	icon_pixmap = XCreateBitmapFromData(winInfo.display, win,
 			icon_bitmap_bits,
 			icon_bitmap_width,
 			icon_bitmap_height);
@@ -189,7 +187,10 @@ Window createWindow(GLuint width, GLuint height, const char* title){
 
 	class_hints->res_name = "Picture";
 	class_hints->res_class = "Basicwin";
-	XSetWMProperties( display, win, &windowName, &iconName, NULL, 0, size_hints, wm_hints, class_hints);
+	XSetWMProperties( winInfo.display, win, &windowName, &iconName, NULL, 0, size_hints, wm_hints, class_hints);
+
+	printf("Mapping window.\n");
+	XMapWindow( winInfo.display, win );
 
 	return win;
 }
@@ -236,9 +237,9 @@ GLXContext createOpenGLContext(int ver_major, int ver_minor){
 	};
 
 	printf("Creating OpenGL context.\n");
-	glctx = glXCreateContextAttribsARB(display, bestFbc, 0, True, context_attribs);
+	glctx = glXCreateContextAttribsARB(winInfo.display, bestFbc, 0, True, context_attribs);
 
-	XSync( display, False );
+	XSync( winInfo.display, False );
 	if( !ctxErrorOccured && glctx ){
 		printf("OpenGL %d.%d context created.\n", ver_major, ver_minor);
 	}
@@ -248,7 +249,7 @@ GLXContext createOpenGLContext(int ver_major, int ver_minor){
 		return glctx;
 	}
 
-	XSync( display, False );
+	XSync( winInfo.display, False );
 
 	// Восстанавливаем начальный обработчик ошибок Xlib.
 	XSetErrorHandler( oldHandler );
@@ -258,7 +259,7 @@ GLXContext createOpenGLContext(int ver_major, int ver_minor){
 	}
 
 	// Проверяем является созданный контекст direct контекстом.
-	if( !glXIsDirect( display, glctx ) )
+	if( !glXIsDirect( winInfo.display, glctx ) )
 		printf("Indirect GLX rendering context obtained\n");
 	else
 		printf("Direct GLX rendering context obtained.\n");

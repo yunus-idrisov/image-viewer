@@ -4,18 +4,18 @@
 #include "HelperFuns.h"
 #include "Math.h"
 #include "DirectoryWalk.h"
-#include "StrList.h"
 
-GLuint winWidth  = 800;
-GLuint winHeight = 600;
-GLfloat imageScale = 1.0f; // Коэффициент масштабирования( [0.1, 1.0] ).
+WindowInfo winInfo = { 0, 0, 0, 800, 600, 800.0f/600.0f, GL_TRUE, GL_FALSE };
 
 Mat4x4 worldMat, viewMat, orthoMat, PVW;
 Vector3f target = {0,0,0}, eye = {1,0,0}, up = {0,1,0};
+void ResetCamera();		// Функция для сбрасывания параметров камеры(положение и т.д).
 
+GLuint vao;
 GLuint verBuffer;
-GLuint shader;
+void crtVertexArray();	// Создаёт vertex array object и вершинный буфер.
 
+GLuint shader;
 // Ссылки на переменные из шейдера.
 GLuint winWidthID;
 GLuint winHeightID;
@@ -24,57 +24,229 @@ GLuint imageHeihgtID;
 GLuint imageSmp;
 GLuint PVWID;
 
-// Отображаемая текстура.
-TextureInfo gTexInfo = {0,0,0};
 
-void Render();
+TextureInfo gTexInfo = {0,0,0}; 				// Отображаемая текстура.
+GLfloat imageScale = 1.0f;						// Коэффициент масштабирования( [0.1, 1.0] ).
 
-extern Display* display;
-Window win;
+int  InitAppliction(const char* winName,		// Инициализация.
+					GLuint width,
+					GLuint height,
+					GLuint glversion_major,
+					GLuint glversion_minor);
 
-static void MouseWheelHandler(int pos);
-static void MousePosHandler(int x, int y);
+void Render();		   							// Рендер.
+void EventHandler(XEvent xev);  				// Обработчик событий.
+void CleanUp(); 								// Очистка.
 
-// Функция для сбрасывания параметров камеры(положение и т.д).
-static void ResetCamera();
-
-GLboolean isLMBPressed = GL_FALSE;
+void MouseWheelHandler(int wheelPos);
+void MousePosHandler(int x, int y);
 
 int main(int argc, char *argv[]){
-	win = createWindow(winWidth, winHeight, "Picture");
-	if( win == 0 ){
-		fprintf(stderr, "Failed to create window.\n");
+	if( InitAppliction("Image", 800, 600, 3, 3) == 0 ){
+		fprintf(stderr, "Initialization failed.\n");
 		return 0;
 	}
-
-	GLXContext glctx_33 = createOpenGLContext(3,3);
-	if( glctx_33 == 0 ){
-		fprintf(stderr, "Failed to create OpenGL context.\n");
-		return 0;
-	}
-
-	printf("Making context current.\n");
-	glXMakeCurrent( display, win, glctx_33 );
 
 	/*openWalkDir("/home/yunus/Pictures/");*/
 	openWalkDir("./images");
 	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
 	/*openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");*/
 
-	GLuint VertexArrayID;
-	glGenVertexArrays(1, &VertexArrayID);
-	glBindVertexArray(VertexArrayID);
+	XEvent xev;
+	// Основной цикл приложения.
+	while( winInfo.isRunning ){
+		XNextEvent(winInfo.display, &xev);
+		EventHandler( xev );
+	}
 
-	GLfloat r = winWidth/(float)winHeight;
-	GLfloat h = 1.0f;
-	// Создаём буфер для вершин.
+	closeWalkDir();
+	CleanUp();
+	return 0;
+}
+
+int  InitAppliction(const char* winName,
+					GLuint width,
+					GLuint height,
+					GLuint glversion_major,
+					GLuint glversion_minor)
+{
+	// Создаём окно.
+	winInfo.width = width;
+	winInfo.height = height;
+	winInfo.ratio = width/(float)height;
+	winInfo.win = createWindow(winInfo.width, winInfo.height, winName);
+	if( winInfo.win == 0 ){
+		fprintf(stderr, "Failed to create window.\n");
+		return 0;
+	}
+
+	// Создаём контекст OpenGL.
+	winInfo.GLContext = createOpenGLContext(glversion_major, glversion_minor);
+	if( winInfo.GLContext == 0 ){
+		fprintf(stderr, "Failed to create OpenGL context.\n");
+		return 0;
+	}
+
+	// Делаем контекст текущим.
+	printf("Making context current.\n");
+	glXMakeCurrent( winInfo.display, winInfo.win, winInfo.GLContext );
+
+	// Создаём vertex array object и буфер для вершин.
+	crtVertexArray();
+
+	// Создаём шейдер.
+	shader = CreateShader("vertex_shader.vs", "fragment_shader.fs");
+	if( shader == 0 ){
+		fprintf(stderr, "%s\n", "Shader isn't created.");
+		return 0;
+	}
+
+	// Извлечение переменных из шейдера.
+	winWidthID    = glGetUniformLocation(shader, "winWidth");
+	winHeightID   = glGetUniformLocation(shader, "winHeight");
+	imageWidthID  = glGetUniformLocation(shader, "imageWidth");
+	imageHeihgtID = glGetUniformLocation(shader, "imageHeight");
+	imageSmp 	  = glGetUniformLocation(shader, "Image");
+	PVWID 		  = glGetUniformLocation(shader, "PVW");
+
+	// Инициализируем матрицы.
+	Mat4x4Identity(&worldMat);
+	Mat4x4View(&viewMat, &eye, &target, &up);
+	Mat4x4Ortho(&orthoMat, winInfo.ratio, 1, 0.1f, 10.0f);
+	Mat4x4Mult(&PVW, &viewMat, &worldMat);
+	Mat4x4Mult(&PVW, &orthoMat, &PVW);
+
+	glViewport(0,0, winInfo.width, winInfo.height);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	return 1;
+}
+
+void Render(){
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	Mat4x4View(&viewMat, &eye, &target, &up);
+	Mat4x4Mult(&PVW, &viewMat, &worldMat);
+	Mat4x4Mult(&PVW, &orthoMat, &PVW);
+	// Используем созданный нами шейдер для рендеринга.
+	glUseProgram(shader);
+	glUniformMatrix4fv(PVWID, 1, GL_TRUE, PVW.m);
+	glUniform1i(winWidthID, winInfo.width);
+	glUniform1i(winHeightID, winInfo.height);
+	glUniform1i(imageWidthID, gTexInfo.width);
+	glUniform1i(imageHeihgtID, gTexInfo.height);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, gTexInfo.textureID);
+	glUniform1i(imageSmp, 0);
+
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+
+	glXSwapBuffers( winInfo.display, winInfo.win );
+}
+
+void EventHandler(XEvent xev){
+	XWindowAttributes wa;
+	static int wheelPos = 0;
+	static int skipOne = 0;
+	struct timeval start, end;
+
+	switch( xev.type ){
+		case Expose :
+			XGetWindowAttributes(winInfo.display, winInfo.win, &wa);
+			glViewport(0,0, wa.width, wa.height);
+			winInfo.width = wa.width;
+			winInfo.height = wa.height;
+			winInfo.ratio = wa.width/(float)wa.height;
+			Mat4x4Ortho(&orthoMat, winInfo.ratio*imageScale, 1*imageScale, 0.1f, 10.0f);
+			Render();
+			break;
+
+		case ButtonPress : 
+			switch( xev.xbutton.button ){
+				case Button1 : // LMB
+					winInfo.isLMBPressed = GL_TRUE;
+					break;
+
+				case Button3 : // RMB
+					ResetCamera();
+					Render();
+					break;
+
+				case Button4 : // Wheel forward
+					wheelPos++;
+					MouseWheelHandler( wheelPos );
+					Render();
+					break;
+
+				case Button5 : // Wheel backward
+					wheelPos--;
+					MouseWheelHandler( wheelPos );
+					Render();
+					break;
+			};
+			break;
+
+		case ButtonRelease :
+			if( xev.xbutton.button == Button1 )
+				winInfo.isLMBPressed = GL_FALSE;
+			break;
+
+		// Mouse motion.
+		case MotionNotify :
+			if( skipOne == 0 ){
+				MousePosHandler( xev.xmotion.x, xev.xmotion.y );
+				if( winInfo.isLMBPressed )
+					Render();
+			}
+			skipOne++;
+			if( skipOne > 1 )
+				skipOne = 0;
+			break;
+			
+		case KeyPress :
+			switch( XLookupKeysym(&xev.xkey, 0) ){
+				case XK_Escape :
+					winInfo.isRunning = GL_FALSE;
+					break;
+
+				case XK_Right :
+					gettimeofday(&start, NULL);
+
+					ResetCamera();
+					glDeleteTextures(1, &gTexInfo.textureID);
+					gTexInfo = getNextImage();
+
+					gettimeofday(&end, NULL);
+					double diff = (end.tv_sec + end.tv_usec/1000000.0) - (start.tv_sec + start.tv_usec/1000000.0);
+					printf("%.2f s.\n", diff);
+
+					Render();
+					break;
+
+				case XK_Left :
+					ResetCamera();
+					glDeleteTextures(1, &gTexInfo.textureID);
+					gTexInfo = getPrevImage();
+					Render();
+					break;
+			}
+			break;
+	};
+}
+
+void crtVertexArray(){
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray( vao );
+
 	float vertices_coords[] = {
-		 0.0f, h/2, -r/2,
-		 0.0f, h/2,  r/2,
-		 0.0f,-h/2,  r/2,
-		 0.0f, h/2, -r/2,
-		 0.0f,-h/2,  r/2,
-		 0.0f,-h/2, -r/2,
+		 0.0f,  1.0f/2, -1.0f/2,
+		 0.0f,  1.0f/2,  1.0f/2,
+		 0.0f, -1.0f/2,  1.0f/2,
+		 0.0f,  1.0f/2, -1.0f/2,
+		 0.0f, -1.0f/2,  1.0f/2,
+		 0.0f, -1.0f/2, -1.0f/2,
 
 		 1.0f, 1.0f,
 		 0.0f, 1.0f,
@@ -88,148 +260,20 @@ int main(int argc, char *argv[]){
 	glBindBuffer(GL_ARRAY_BUFFER, verBuffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_coords), vertices_coords, GL_STATIC_DRAW);
 
-	// Создаём шейдер.
-	shader = CreateShader("vertex_shader.vs", "fragment_shader.fs");
-	if( shader == 0 ){
-		fprintf(stderr, "%s\n", "Shader isn't created.");
-		return -1;
-	}
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
 
-	winWidthID    = glGetUniformLocation(shader, "winWidth");
-	winHeightID   = glGetUniformLocation(shader, "winHeight");
-	imageWidthID  = glGetUniformLocation(shader, "imageWidth");
-	imageHeihgtID = glGetUniformLocation(shader, "imageHeight");
+	glBindBuffer(GL_ARRAY_BUFFER, verBuffer);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(3*6*sizeof(GLfloat)));
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	imageSmp = glGetUniformLocation(shader, "Image");
-
-	// Матрицы.
-	Mat4x4Identity(&worldMat);
-	Mat4x4View(&viewMat, &eye, &target, &up);
-	Mat4x4Ortho(&orthoMat, winWidth/(float)winHeight, 1, 0.1f, 10.0f);
-	Mat4x4Mult(&PVW, &viewMat, &worldMat);
-	Mat4x4Mult(&PVW, &orthoMat, &PVW);
-
-	PVWID = glGetUniformLocation(shader, "PVW");
-
-	glViewport(0,0, winWidth, winHeight);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-
-	XEvent xev;
-	XWindowAttributes wa;
-	// Основной цикл приложения.
-	while(1){
-		XNextEvent(display, &xev);
-		if( xev.type == Expose ){
-			XGetWindowAttributes(display, win, &wa);
-			// При изменении размеров окна необходимо
-			// изменить координаты отображаемой области.
-		 	float new_r = wa.width/(float)wa.height;
-		 	for(int i = 2; i <= 17; i += 3)
-				vertices_coords[i] *= new_r/r;
-			r = new_r;
-
-			glDeleteBuffers(1, &verBuffer);
-			glBindBuffer(GL_ARRAY_BUFFER, verBuffer);
-			glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_coords), vertices_coords, GL_STATIC_DRAW);
-
-			glViewport(0,0, wa.width, wa.height);
-			winWidth = wa.width;
-			winHeight = wa.height;
-			Mat4x4Ortho(&orthoMat, winWidth/(float)winHeight*imageScale, 1*imageScale, 0.1f, 10.0f);
-			Render();
-		}
-
-		if( xev.type == ButtonPress ){
-			// Button1 - LMB
-			// Button3 - RMB
-			// Button4 - Wheel forward
-			// Button5 - Wheel backward
-			if( xev.xbutton.button == Button1 )
-				isLMBPressed = GL_TRUE;
-
-			if( xev.xbutton.button == Button3 ){
-				ResetCamera();
-				Render();
-			}
-
-			static int pos = 0;
-			if( xev.xbutton.button == Button4 ){
-				pos++;
-				MouseWheelHandler( pos );
-				Render();
-			}
-
-			if( xev.xbutton.button == Button5 ){
-				pos--;
-				MouseWheelHandler( pos );
-				Render();
-			}
-		}
-
-		if( xev.type == ButtonRelease ){
-			if( xev.xbutton.button == Button1 )
-				isLMBPressed = GL_FALSE;
-		}
-
-		static int skipOne = 0;
-		if( xev.type == MotionNotify ){
-			if( skipOne == 0 ){
-				MousePosHandler( xev.xmotion.x, xev.xmotion.y );
-				if( isLMBPressed )
-					Render();
-			}
-			skipOne++;
-			if( skipOne > 1 )
-				skipOne = 0;
-		}
-
-		struct timeval start, end;
-		if( xev.type == KeyPress ){
-			if( XLookupKeysym(&xev.xkey, 0) == XK_Escape )
-				break;
-
-			if( XLookupKeysym(&xev.xkey, 0) == XK_Right ){
-				gettimeofday(&start, NULL);
-
-				ResetCamera();
-				glDeleteTextures(1, &gTexInfo.textureID);
-				gTexInfo = getNextImage();
-
-				gettimeofday(&end, NULL);
-				double diff = (end.tv_sec + end.tv_usec/1000000.0) - (start.tv_sec + start.tv_usec/1000000.0);
-				printf("%.2f s.\n", diff);
-
-				Render();
-			}
-
-			if( XLookupKeysym(&xev.xkey, 0) == XK_Left ){
-				ResetCamera();
-				glDeleteTextures(1, &gTexInfo.textureID);
-				gTexInfo = getPrevImage();
-				Render();
-			}
-
-		}
-	}
-
-	// Очистка.
-  	glXMakeCurrent( display, 0, 0 );
-  	glXDestroyContext( display, glctx_33 );
-  	XDestroyWindow( display, win );
-  	XCloseDisplay( display );
-
-	glDeleteBuffers(1, &verBuffer);
-	glDeleteProgram(shader);
-	glDeleteVertexArrays(1, &VertexArrayID);
-	glDeleteTextures(1, &gTexInfo.textureID);
-	closeWalkDir();
-
-	return 0;
+	glBindVertexArray(0);
 }
 
-static void MouseWheelHandler(int pos){
+void MouseWheelHandler(int wheelPos){
 	static int prevPos = 1;
-	if( pos > prevPos )
+	if( wheelPos > prevPos )
 		imageScale -= 0.1f;
 	else
 		imageScale += 0.1f;
@@ -237,18 +281,18 @@ static void MouseWheelHandler(int pos){
 		imageScale = 0.1f;
 	if( imageScale > 1.0f )
 		imageScale = 1.0f;
-	Mat4x4Ortho(&orthoMat, winWidth/(float)winHeight*imageScale, 1*imageScale, 0.1f, 10.0f);
-	prevPos = pos;
+	Mat4x4Ortho(&orthoMat, winInfo.ratio*imageScale, 1*imageScale, 0.1f, 10.0f);
+	prevPos = wheelPos;
 }
 
-static void MousePosHandler(int x, int y){
+void MousePosHandler(int x, int y){
 	// Перемещение изображения.
 	static int prev_x = 0, prev_y = 0;
 
-	float r = winWidth/(float)winHeight;
-	float horOffset = (x - prev_x)/(float)winWidth*r*imageScale;
-	float verOffset = (y - prev_y)/(float)winHeight*1.0f*imageScale;
-	if( isLMBPressed ){
+	float r = winInfo.ratio;
+	float horOffset = (x - prev_x)/(float)winInfo.width*r*imageScale;
+	float verOffset = (y - prev_y)/(float)winInfo.height*1.0f*imageScale;
+	if( winInfo.isLMBPressed ){
 		target.z += horOffset;
 		eye.z += horOffset;
 		target.y += verOffset;
@@ -258,44 +302,22 @@ static void MousePosHandler(int x, int y){
 	prev_y = y;
 }
 
-static void ResetCamera(){
+void ResetCamera(){
 	target.x = target.y = target.z = 0.0f;
 	eye.x = 1.0f;
 	eye.y = eye.z = 0.0f;
 	imageScale = 1.0f;
-	Mat4x4Ortho(&orthoMat, winWidth/(float)winHeight*imageScale, 1*imageScale, 0.1f, 10.0f);
+	Mat4x4Ortho(&orthoMat, winInfo.ratio*imageScale, 1*imageScale, 0.1f, 10.0f);
 }
 
-void Render(){
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+void CleanUp(){
+  	glXMakeCurrent( winInfo.display, 0, 0 );
+  	glXDestroyContext( winInfo.display, winInfo.GLContext );
+  	XDestroyWindow( winInfo.display, winInfo.win );
+  	XCloseDisplay( winInfo.display );
 
-	Mat4x4View(&viewMat, &eye, &target, &up);
-	Mat4x4Mult(&PVW, &viewMat, &worldMat);
-	Mat4x4Mult(&PVW, &orthoMat, &PVW);
-	// Используем созданный нами шейдер для рендеринга.
-	glUseProgram(shader);
-	glUniformMatrix4fv(PVWID, 1, GL_TRUE, PVW.m);
-	glUniform1i(winWidthID, winWidth);
-	glUniform1i(winHeightID, winHeight);
-	glUniform1i(imageWidthID, gTexInfo.width);
-	glUniform1i(imageHeihgtID, gTexInfo.height);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, gTexInfo.textureID);
-	glUniform1i(imageSmp, 0);
-
-	// Первый параметр передаваемый в шейдер.
-	glEnableVertexAttribArray(0);
-	glEnableVertexAttribArray(1);
-
-	glBindBuffer(GL_ARRAY_BUFFER, verBuffer);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)(3*6*sizeof(GLfloat)));
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	
-	glXSwapBuffers( display, win );
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &verBuffer);
+	glDeleteProgram(shader);
+	glDeleteTextures(1, &gTexInfo.textureID);
 }

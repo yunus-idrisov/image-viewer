@@ -15,6 +15,8 @@ void main(){
 	vec3 posW = verPosition;
 	float r = float(winWidth)/winHeight;
 	float r1 = float(imageWidth)/imageHeight;
+	// При изменении размеров окна изменяется и размер отображаемой области.
+	posW.z *= r;
 
 	if( (winWidth < imageWidth) || (winHeight < imageHeight) ){
 		if( r1 <= r ) 
