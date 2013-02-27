@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 #include <FreeImage.h>
 #include "HelperFuns.h"
 #include "icon_bitmap"
@@ -529,4 +530,10 @@ static void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char* message){
 		printf("%s Format\n", FreeImage_GetFormatFromFIF(fif));
 	printf(message);
 	printf(" ***\n");
+}
+
+GLdouble getTime(){
+	struct timeval t;
+	gettimeofday(&t, NULL);
+	return (t.tv_sec + t.tv_usec/1000000.0);
 }

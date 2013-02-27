@@ -83,7 +83,10 @@ enum SUPPORTED_IMAGE_FORMATS{
  Если формат поддерживается, то возвращается соответствующая
  константа из SUPPORTED_IMAGE_FORMATS,а если нет то - NOT_SUPPORTED(0).
 */
-
 int isSupTexture(const char* textureName);
+
+// Оптимизация ??????????????
+// Время, отсчитваемое от Epoch.
+GLdouble getTime();
 
 #endif // HELPERFUNS_H

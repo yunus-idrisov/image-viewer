@@ -10,6 +10,7 @@ WindowInfo winInfo = { 0, 0, 0, 800, 600, 800.0f/600.0f, GL_TRUE, GL_FALSE };
 Mat4x4 worldMat, viewMat, orthoMat, PVW;
 Vector3f target = {0,0,0}, eye = {1,0,0}, up = {0,1,0};
 void ResetCamera();		// Функция для сбрасывания параметров камеры(положение и т.д).
+GLfloat zOffset = 0.0f, yOffset = 0.0f;
 
 GLuint vao;
 GLuint verBuffer;
@@ -22,8 +23,9 @@ GLuint winHeightID;
 GLuint imageWidthID;  
 GLuint imageHeihgtID;
 GLuint imageSmp;
+GLuint zOffsetID;
+GLuint yOffsetID;
 GLuint PVWID;
-
 
 TextureInfo gTexInfo = {0,0,0}; 				// Отображаемая текстура.
 GLfloat imageScale = 1.0f;						// Коэффициент масштабирования( [0.1, 1.0] ).
@@ -108,6 +110,8 @@ int  InitAppliction(const char* winName,
 	imageHeihgtID = glGetUniformLocation(shader, "imageHeight");
 	imageSmp 	  = glGetUniformLocation(shader, "Image");
 	PVWID 		  = glGetUniformLocation(shader, "PVW");
+	zOffsetID	  = glGetUniformLocation(shader, "zOffset");
+	yOffsetID	  = glGetUniformLocation(shader, "yOffset");
 
 	// Инициализируем матрицы.
 	Mat4x4Identity(&worldMat);
@@ -134,6 +138,8 @@ void Render(){
 	glUniform1i(winHeightID, winInfo.height);
 	glUniform1i(imageWidthID, gTexInfo.width);
 	glUniform1i(imageHeihgtID, gTexInfo.height);
+	glUniform1f(zOffsetID, zOffset);
+	glUniform1f(yOffsetID, yOffset);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, gTexInfo.textureID);
@@ -150,7 +156,8 @@ void EventHandler(XEvent xev){
 	XWindowAttributes wa;
 	static int wheelPos = 0;
 	static int skipOne = 0;
-	struct timeval start, end;
+	GLdouble start, end;
+	GLdouble animStart = 0.0, animLen = 0.3, animProgress = 0.0;
 
 	switch( xev.type ){
 		case Expose :
@@ -212,16 +219,26 @@ void EventHandler(XEvent xev){
 					break;
 
 				case XK_Right :
-					gettimeofday(&start, NULL);
+					start = getTime();
 
 					ResetCamera();
 					glDeleteTextures(1, &gTexInfo.textureID);
 					gTexInfo = getNextImage();
 
-					gettimeofday(&end, NULL);
-					double diff = (end.tv_sec + end.tv_usec/1000000.0) - (start.tv_sec + start.tv_usec/1000000.0);
-					printf("%.2f s.\n", diff);
+					end = getTime();
+					// Время на загрузку текстуры.
+					printf("%.2f s.\n", end - start);
 
+					// Анимация перелистывания.
+					animStart = getTime();
+					animProgress = getTime() - animStart;
+					while( animProgress < animLen ){
+						zOffset = (getTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
+						yOffset = -1/8.0*zOffset*zOffset;
+						Render();
+						animProgress = getTime() - animStart;
+					}
+					zOffset = yOffset = 0.0f;
 					Render();
 					break;
 
@@ -229,6 +246,18 @@ void EventHandler(XEvent xev){
 					ResetCamera();
 					glDeleteTextures(1, &gTexInfo.textureID);
 					gTexInfo = getPrevImage();
+
+					// Анимация перелистывания.
+					animStart = getTime();
+					animProgress = getTime() - animStart;
+					while( animProgress < animLen ){
+						zOffset = (getTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
+						zOffset = -zOffset;
+						yOffset = -1/8.0*zOffset*zOffset;
+						Render();
+						animProgress = getTime() - animStart;
+					}
+					zOffset = yOffset = 0.0f;
 					Render();
 					break;
 			}

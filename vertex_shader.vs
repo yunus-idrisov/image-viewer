@@ -8,6 +8,9 @@ uniform int  winWidth;
 uniform int  winHeight;
 uniform int  imageWidth;
 uniform int  imageHeight;
+// Переменные используемые для анимации.
+uniform float zOffset;
+uniform float yOffset;
 
 out vec2 UV;
 
@@ -28,6 +31,8 @@ void main(){
 		posW.z *= imageWidth/float(winWidth);
 		posW.y *= imageHeight/float(winHeight);
 	}
+	posW.y += yOffset;
+	posW.z += zOffset;
 	
 	gl_Position = PVW*vec4(posW, 1.0);
 	UV = uvCoord;
