@@ -10,7 +10,13 @@ WindowInfo winInfo = { 0, 0, 0, 800, 600, 800.0f/600.0f, GL_TRUE, GL_FALSE };
 Mat4x4 worldMat, viewMat, orthoMat, PVW;
 Vector3f target = {0,0,0}, eye = {1,0,0}, up = {0,1,0};
 void ResetCamera();		// Функция для сбрасывания параметров камеры(положение и т.д).
-GLfloat zOffset = 0.0f, yOffset = 0.0f;
+
+// Переменные используемые для анимации перелистывания.
+GLfloat   zOffset = 0.0f, yOffset = 0.0f;
+GLboolean isAnimationEnable = GL_TRUE;
+void AnimateImageShow(GLboolean next); // Функция, которая и осуществляет плавное 
+									   // перелиствание. Если входной параметр GL_TRUE, то
+									   // загружается следующее изображение.
 
 GLuint vao;
 GLuint verBuffer;
@@ -157,7 +163,6 @@ void EventHandler(XEvent xev){
 	static int wheelPos = 0;
 	static int skipOne = 0;
 	GLdouble start, end;
-	GLdouble animStart = 0.0, animLen = 0.3, animProgress = 0.0;
 
 	switch( xev.type ){
 		case Expose :
@@ -230,14 +235,8 @@ void EventHandler(XEvent xev){
 					printf("%.2f s.\n", end - start);
 
 					// Анимация перелистывания.
-					animStart = getTime();
-					animProgress = getTime() - animStart;
-					while( animProgress < animLen ){
-						zOffset = (getTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
-						yOffset = -1/8.0*zOffset*zOffset;
-						Render();
-						animProgress = getTime() - animStart;
-					}
+					if( isAnimationEnable )
+						AnimateImageShow(GL_TRUE);
 					zOffset = yOffset = 0.0f;
 					Render();
 					break;
@@ -248,15 +247,8 @@ void EventHandler(XEvent xev){
 					gTexInfo = getPrevImage();
 
 					// Анимация перелистывания.
-					animStart = getTime();
-					animProgress = getTime() - animStart;
-					while( animProgress < animLen ){
-						zOffset = (getTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
-						zOffset = -zOffset;
-						yOffset = -1/8.0*zOffset*zOffset;
-						Render();
-						animProgress = getTime() - animStart;
-					}
+					if( isAnimationEnable )
+						AnimateImageShow(GL_FALSE);
 					zOffset = yOffset = 0.0f;
 					Render();
 					break;
@@ -349,4 +341,30 @@ void CleanUp(){
 	glDeleteBuffers(1, &verBuffer);
 	glDeleteProgram(shader);
 	glDeleteTextures(1, &gTexInfo.textureID);
+}
+
+void AnimateImageShow(GLboolean next){
+	GLdouble animStart = 0.0, 
+			 animLen = 0.3, 
+			 animProgress = 0.0;
+	GLdouble coef = -1/8.0;
+	animStart = getTime();
+	animProgress = getTime() - animStart;
+
+	if( next ){
+		while( animProgress < animLen ){
+			zOffset = (getTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
+			yOffset = coef*zOffset*zOffset;
+			Render();
+			animProgress = getTime() - animStart;
+		}
+	}else {
+		while( animProgress < animLen ){
+			zOffset = (getTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
+			zOffset = -zOffset;
+			yOffset = coef*zOffset*zOffset;
+			Render();
+			animProgress = getTime() - animStart;
+		}
+	}
 }
