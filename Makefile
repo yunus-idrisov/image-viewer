@@ -3,7 +3,7 @@
 # Это определение необходимо, чтобы включить объявление некоторых
 # функций OpenGL(например, glGenVertexArrays(...))
 
-CFLAGS := -D GL_GLEXT_PROTOTYPES -std=c99 2>log
+CFLAGS := -D GL_GLEXT_PROTOTYPES -pthread -std=c99 2>log
 LIBS   := -lX11 -lGL -lfreeimage
 
 main.out : main.o math.o helperfuns.o strlist.o directorywalk.o
