@@ -50,13 +50,23 @@ void MouseWheelHandler(int wheelPos);
 void MousePosHandler(int x, int y);
 
 int main(int argc, char *argv[]){
-	if( InitAppliction("Image", 800, 600, 3, 3) == 0 ){
+	if( InitAppliction("Image", winInfo.width, winInfo.height, 3, 3) == 0 ){
 		fprintf(stderr, "Initialization failed.\n");
 		return 0;
 	}
 
+	if( argc == 2 ){
+		if( openWalkDir( argv[1] ) == -1 ){
+			fprintf(stderr, "Error while opening path \"%s\"\n", argv[1]);
+			return 1;
+		}
+	}else {
+		printf("Please, specify path to directory with images.\n");
+		return 1;
+	}
+
 	/*openWalkDir("/home/yunus/Pictures/");*/
-	openWalkDir("./images");
+	/*openWalkDir("./images");*/
 	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
 	/*openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");*/
 
