@@ -117,8 +117,8 @@ Window CreateWindow(GLuint width, GLuint height, const char* title){
 	XSetWindowAttributes swa;
 	swa.colormap = cmap;
 	swa.border_pixel = 0;
-	swa.event_mask = StructureNotifyMask | ExposureMask | KeyPressMask | PointerMotionMask
-					   | ButtonPressMask | ButtonReleaseMask;
+	swa.event_mask = StructureNotifyMask | ExposureMask | KeyReleaseMask | 
+					 PointerMotionMask | ButtonPressMask | ButtonReleaseMask;
 
 	printf("Creating window.\n");
 	win = XCreateWindow(winInfo.display, RootWindow(winInfo.display, vi->screen),

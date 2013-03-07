@@ -71,6 +71,7 @@ int main(int argc, char *argv[]){
 	OpenWalkDir("./images");
 	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
 	/*openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");*/
+	gTexInfo = GetNextImage();
 
 	XEvent xev;
 	// Основной цикл приложения.
@@ -229,7 +230,7 @@ void EventHandler(XEvent xev){
 				skipOne = 0;
 			break;
 			
-		case KeyPress :
+		case KeyRelease :
 			switch( XLookupKeysym(&xev.xkey, 0) ){
 				case XK_Escape :
 					winInfo.isRunning = GL_FALSE;
