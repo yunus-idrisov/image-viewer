@@ -15,7 +15,7 @@
 extern WindowInfo winInfo;
 static GLXFBConfig bestFbc;
 
-Window createWindow(GLuint width, GLuint height, const char* title){
+Window CreateWindow(GLuint width, GLuint height, const char* title){
 	Window win;
 
 	if( (winInfo.display = XOpenDisplay(NULL)) == NULL ){
@@ -202,7 +202,7 @@ int ctxErrorHandler(Display* dpy, XErrorEvent* ev){
 	return 0;
 }
 
-GLXContext createOpenGLContext(int ver_major, int ver_minor){
+GLXContext CreateOpenGLContext(int ver_major, int ver_minor){
 	GLXContext glctx = 0;
 
 	typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, 
@@ -368,7 +368,7 @@ GLuint CreateShader(const char *vertex_shader_path, const char *fragment_shader_
 
 static void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char* message);
 
-int isSupTexture(const char* textureName){
+int IsSupTexture(const char* textureName){
 	int sif = NOT_SUPPORTED;
 
 	char *dot_loc = strrchr(textureName, '.');
@@ -399,7 +399,7 @@ int isSupTexture(const char* textureName){
 	return sif;
 }
 
-TextureInfo loadTexture(const char *texturePath){
+TextureInfo LoadTexture(const char *texturePath){
 	// Функция для обработки ошибок.
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 
@@ -407,7 +407,7 @@ TextureInfo loadTexture(const char *texturePath){
 
 	FREE_IMAGE_FORMAT fif = 0;
 
-	switch( isSupTexture(texturePath) ){
+	switch( IsSupTexture(texturePath) ){
 		case NOT_SUPPORTED:
 			fprintf(stderr, "Error: image format isn't supported yet.\n");
 			return texInfo;
@@ -459,13 +459,13 @@ TextureInfo loadTexture(const char *texturePath){
 	return texInfo;
 }
 
-FIBITMAP* getFIBITMAP(const char *texturePath){
+FIBITMAP* GetFIBITMAP(const char *texturePath){
 	// Функция для обработки ошибок.
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 
 	FREE_IMAGE_FORMAT fif = 0;
 
-	switch( isSupTexture(texturePath) ){
+	switch( IsSupTexture(texturePath) ){
 		case NOT_SUPPORTED:
 			fprintf(stderr, "Error: image format isn't supported yet.\n");
 			return 0;
@@ -487,7 +487,7 @@ FIBITMAP* getFIBITMAP(const char *texturePath){
 		return bitmap;
 }
 
-TextureInfo createGLTexture(FIBITMAP* bitmap){
+TextureInfo CreateGLTexture(FIBITMAP* bitmap){
 	TextureInfo texInfo = {0,0,0};
 	if( bitmap == 0 )
 		return texInfo;
@@ -523,7 +523,6 @@ TextureInfo createGLTexture(FIBITMAP* bitmap){
 	return texInfo;
 }
 
-
 static void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char* message){
 	printf("\n*** ");
 	if( fif != FIF_UNKNOWN )
@@ -532,7 +531,7 @@ static void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char* message){
 	printf(" ***\n");
 }
 
-GLdouble getTime(){
+GLdouble GetTime(){
 	struct timeval t;
 	gettimeofday(&t, NULL);
 	return (t.tv_sec + t.tv_usec/1000000.0);

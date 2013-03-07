@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include "StrList.h"
 
-void initStrList(StrList** list){
+void InitStrList(StrList** list){
 	*list = malloc(sizeof(StrList));
 	(*list)->head = 0;
 	(*list)->tail = 0;
 }
 
-void addStringToStrList(StrList* list, const char* str){
+void AddStringToStrList(StrList* list, const char* str){
 	// Пустая строка.
 	if( strlen(str) == 0 )
 		return;
@@ -33,7 +33,7 @@ void addStringToStrList(StrList* list, const char* str){
 	}
 }
 
-void deleteStrList(StrList** list){
+void DeleteStrList(StrList** list){
 	if( (*list) == 0 )
 		return;
 	ListNode* cur = (*list)->head;

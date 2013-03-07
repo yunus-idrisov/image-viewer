@@ -2,10 +2,10 @@
 #define STRLIST_H
 
 /*
-  Двунаправленный список из строки в стиле C.
+  Двунаправленный список из строк в стиле C.
   Список объязательно должен быть инициализирован
-  функцией initStrList(...) и удалён с помощью
-  deleteStrList(...).
+  функцией InitStrList(...) и удалён с помощью
+  DeleteStrList(...).
 */
 
 typedef struct ListNode{
@@ -21,13 +21,13 @@ typedef struct{
 
 /*
  Инициализация списка. Должна быть вызвана первой
- при работе со списком. Для list не должна
+ при работе со списком. Для аргумента list не должна
  быть выделена память.
 */
-void initStrList(StrList** list);
+void InitStrList(StrList** list);
 
 // Вставка строки в список(c выделением для неё памяти).
-void addStringToStrList(StrList* list, const char* str);
+void AddStringToStrList(StrList* list, const char* str);
 
 /*
  Очистка списка. ОБРАТИТЕ ВНИМАНИЕ, что в функцию
@@ -35,7 +35,7 @@ void addStringToStrList(StrList* list, const char* str);
  Ошибки компиляции не будет, если вы передадите просто 
  указатель, а ошибка выполнения будет.
 */
-void deleteStrList(StrList** list);
+void DeleteStrList(StrList** list);
 
 // Test funs.
 void ShowStrList(StrList* list);

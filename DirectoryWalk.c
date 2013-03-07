@@ -16,21 +16,18 @@ static ListNode*	curImagePointer = 0;
 static int			imagePathLen = 0;
 static char			imagePath[NAME_MAX];
 
-/*
- * Нулевой элемент массива хранит предыдущее
- * изображение, 1 - текущее, 2 - следующее.
- */
 static pthread_t 	thread_id = 0;
 static FIBITMAP*	pNextFIBITMAP = 0;
 static FIBITMAP*	pPrevFIBITMAP = 0;
+
 /*
  * Какое изображение должно быть загружено функцией thread_func(...).
  * 0 означает предыдущее, 2 - следующее.
  */
 static int			imageToLoad;
 
-ListNode*	getNextNodeCycle(ListNode* curNode);
-ListNode*	getPrevNodeCycle(ListNode* curNode);
+ListNode*	GetNextNodeCycle(ListNode* curNode);
+ListNode*	GetPrevNodeCycle(ListNode* curNode);
 
 static void* thread_func(void* arg){
 	switch( imageToLoad ){
@@ -40,14 +37,14 @@ static void* thread_func(void* arg){
 				pNextFIBITMAP = 0;
 
 				strcat(imagePath, curImagePointer->str);
-				pNextFIBITMAP = getFIBITMAP( imagePath );
+				pNextFIBITMAP = GetFIBITMAP( imagePath );
 				imagePath[imagePathLen] = '\0';
 
-				curImagePointer = getPrevNodeCycle( curImagePointer );
+				curImagePointer = GetPrevNodeCycle( curImagePointer );
 
-				ListNode* prevImagePointer = getPrevNodeCycle( curImagePointer );
+				ListNode* prevImagePointer = GetPrevNodeCycle( curImagePointer );
 				strcat(imagePath, prevImagePointer->str);
-				pPrevFIBITMAP = getFIBITMAP( imagePath );
+				pPrevFIBITMAP = GetFIBITMAP( imagePath );
 				imagePath[imagePathLen] = '\0';
 			}
 			break;
@@ -57,14 +54,14 @@ static void* thread_func(void* arg){
 				pPrevFIBITMAP = 0;
 
 				strcat(imagePath, curImagePointer->str);
-				pPrevFIBITMAP = getFIBITMAP( imagePath );
+				pPrevFIBITMAP = GetFIBITMAP( imagePath );
 				imagePath[imagePathLen] = '\0';
 
-				curImagePointer = getNextNodeCycle( curImagePointer );
+				curImagePointer = GetNextNodeCycle( curImagePointer );
 
-				ListNode* nextImagePointer = getNextNodeCycle( curImagePointer );
+				ListNode* nextImagePointer = GetNextNodeCycle( curImagePointer );
 				strcat(imagePath, nextImagePointer->str);
-				pNextFIBITMAP = getFIBITMAP( imagePath );
+				pNextFIBITMAP = GetFIBITMAP( imagePath );
 				imagePath[imagePathLen] = '\0';
 			}
 			break;
@@ -72,13 +69,13 @@ static void* thread_func(void* arg){
 	return 0;
 }
 
-int openWalkDir(const char* path){
-	initStrList(&imageNames);
+int OpenWalkDir(const char* path){
+	InitStrList(&imageNames);
 	dir = opendir(path);
 	if( dir == NULL ){
 		fprintf(stderr, "Error in open path \"%s\": ", path);
 		fprintf(stderr, "%s.\n", strerror(errno));
-		deleteStrList(&imageNames);
+		DeleteStrList(&imageNames);
 		return -1;
 	}
 
@@ -97,22 +94,22 @@ int openWalkDir(const char* path){
 		// Если прочитанный файл обычный файл и является
 		// поддерживаемой текстурой, то добавить его в 
 		// список изображений.
-		if( (de->d_type == DT_REG) && isSupTexture(de->d_name) )
-			addStringToStrList(imageNames, de->d_name);
+		if( (de->d_type == DT_REG) && IsSupTexture(de->d_name) )
+			AddStringToStrList(imageNames, de->d_name);
 	}
 
 	curImagePointer = imageNames->head;
 
 	if( curImagePointer != 0 ){ // Если список изображений не пуст.
 
-		ListNode* prevImagePointer = getPrevNodeCycle( curImagePointer );
+		ListNode* prevImagePointer = GetPrevNodeCycle( curImagePointer );
 		strcat(imagePath, prevImagePointer->str);
-		pPrevFIBITMAP = getFIBITMAP( imagePath );
+		pPrevFIBITMAP = GetFIBITMAP( imagePath );
 		imagePath[imagePathLen] = '\0';
 
-		ListNode* nextImagePointer = getNextNodeCycle( curImagePointer );
+		ListNode* nextImagePointer = GetNextNodeCycle( curImagePointer );
 		strcat(imagePath, nextImagePointer->str);
-		pNextFIBITMAP = getFIBITMAP( imagePath );
+		pNextFIBITMAP = GetFIBITMAP( imagePath );
 		imagePath[imagePathLen] = '\0';
 	}
 
@@ -120,39 +117,39 @@ int openWalkDir(const char* path){
 	return 1;
 }
 
-TextureInfo getNextImage(){
+TextureInfo GetNextImage(){
 	TextureInfo texInfo = {0,0,0};
 
 	void* status;
 	pthread_join(thread_id, &status);
-	texInfo = createGLTexture( pNextFIBITMAP );
+	texInfo = CreateGLTexture( pNextFIBITMAP );
 
 	imageToLoad = 2;
 	if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
-		fprintf(stderr, "create error\n");
+		fprintf(stderr, "Thread create error.\n");
 
 	return texInfo;
 }
 
-TextureInfo getPrevImage(){
+TextureInfo GetPrevImage(){
 	TextureInfo texInfo = {0,0,0};
 
 	void* status;
 	pthread_join(thread_id, &status);
-	texInfo = createGLTexture( pPrevFIBITMAP );
+	texInfo = CreateGLTexture( pPrevFIBITMAP );
 
 	imageToLoad = 0;
 	if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
-		fprintf(stderr, "create error\n");
+		fprintf(stderr, "Thread create error.\n");
 
 	return texInfo;
 }
 
-int closeWalkDir(){
+int CloseWalkDir(){
 	void* status;
 	pthread_join( thread_id, NULL );
 
-	deleteStrList(&imageNames);
+	DeleteStrList(&imageNames);
 
 	if( closedir(dir) != 0 ){
 		fprintf(stderr, "closedir(...) error: ");
@@ -167,7 +164,7 @@ int closeWalkDir(){
 	return 1;
 }
 
-ListNode* getNextNodeCycle(ListNode* curImageNode){
+ListNode* GetNextNodeCycle(ListNode* curImageNode){
 	if( curImageNode != 0 ){
 		curImageNode = curImageNode->next;
 		if( curImageNode == 0 )
@@ -177,7 +174,7 @@ ListNode* getNextNodeCycle(ListNode* curImageNode){
 		return 0;
 }
 
-ListNode* getPrevNodeCycle(ListNode* curImageNode){
+ListNode* GetPrevNodeCycle(ListNode* curImageNode){
 	if( curImageNode != 0 ){
 		curImageNode = curImageNode->prev;
 		if( curImageNode == 0 )

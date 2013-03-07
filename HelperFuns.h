@@ -8,7 +8,7 @@
 #include "Math.h"
 
 // Создаёт окно. При ошибке возвращается 0.
-Window createWindow(GLuint width, GLuint height, const char* title);
+Window CreateWindow(GLuint width, GLuint height, const char* title);
 
 // Структура, которая хранит окно и некоторые его параметры.
 typedef struct{
@@ -23,7 +23,7 @@ typedef struct{
 } WindowInfo;
 
 // Создаёт контекст OpenGL. При ошибке возвращается 0.
-GLXContext createOpenGLContext(int ver_major, int ver_minor);
+GLXContext CreateOpenGLContext(int ver_major, int ver_minor);
 
 // Функция CreateShader создаёт шейдерную программу из 
 // вершинного и фрагментного шейдеров.
@@ -43,7 +43,7 @@ typedef struct{
  Если произошла ошибка, то в поле textureID 
  структуры TextureInfo записывается 0.
 */
-TextureInfo loadTexture(const char *texturePath);
+TextureInfo LoadTexture(const char *texturePath);
 
 /*
  * Чтобы распараллелить загрузку текстуры делим функцию
@@ -64,8 +64,8 @@ TextureInfo loadTexture(const char *texturePath);
  * невозможно вызвать функции OpenGL. Функция createGLTexture(...)
  * вызывается в основном потоке, а getFIBITMAP(...) в побочном.
  */
-FIBITMAP*	  getFIBITMAP(const char *texturePath);
-TextureInfo	  createGLTexture(FIBITMAP* bitmap);
+FIBITMAP*	  GetFIBITMAP(const char *texturePath);
+TextureInfo	  CreateGLTexture(FIBITMAP* bitmap);
 
 // Поддерживаемые форматы изображений.
 enum SUPPORTED_IMAGE_FORMATS{ 
@@ -83,10 +83,10 @@ enum SUPPORTED_IMAGE_FORMATS{
  Если формат поддерживается, то возвращается соответствующая
  константа из SUPPORTED_IMAGE_FORMATS,а если нет то - NOT_SUPPORTED(0).
 */
-int isSupTexture(const char* textureName);
+int IsSupTexture(const char* textureName);
 
 // Оптимизация ??????????????
 // Время, отсчитваемое от Epoch.
-GLdouble getTime();
+GLdouble GetTime();
 
 #endif // HELPERFUNS_H

@@ -20,7 +20,7 @@ void AnimateImageShow(GLboolean next); // Функция, которая и ос
 
 GLuint vao;
 GLuint verBuffer;
-void crtVertexArray();	// Создаёт vertex array object и вершинный буфер.
+void CreateVertexArray();	// Создаёт vertex array object и вершинный буфер.
 
 GLuint shader;
 // Ссылки на переменные из шейдера.
@@ -55,6 +55,7 @@ int main(int argc, char *argv[]){
 		return 0;
 	}
 
+	/*
 	if( argc == 2 ){
 		if( openWalkDir( argv[1] ) == -1 ){
 			fprintf(stderr, "Error while opening path \"%s\"\n", argv[1]);
@@ -64,9 +65,10 @@ int main(int argc, char *argv[]){
 		printf("Please, specify path to directory with images.\n");
 		return 1;
 	}
+	*/
 
 	/*openWalkDir("/home/yunus/Pictures/");*/
-	/*openWalkDir("./images");*/
+	OpenWalkDir("./images");
 	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
 	/*openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");*/
 
@@ -77,7 +79,7 @@ int main(int argc, char *argv[]){
 		EventHandler( xev );
 	}
 
-	closeWalkDir();
+	CloseWalkDir();
 	CleanUp();
 	return 0;
 }
@@ -92,14 +94,14 @@ int  InitAppliction(const char* winName,
 	winInfo.width = width;
 	winInfo.height = height;
 	winInfo.ratio = width/(float)height;
-	winInfo.win = createWindow(winInfo.width, winInfo.height, winName);
+	winInfo.win = CreateWindow(winInfo.width, winInfo.height, winName);
 	if( winInfo.win == 0 ){
 		fprintf(stderr, "Failed to create window.\n");
 		return 0;
 	}
 
 	// Создаём контекст OpenGL.
-	winInfo.GLContext = createOpenGLContext(glversion_major, glversion_minor);
+	winInfo.GLContext = CreateOpenGLContext(glversion_major, glversion_minor);
 	if( winInfo.GLContext == 0 ){
 		fprintf(stderr, "Failed to create OpenGL context.\n");
 		return 0;
@@ -110,7 +112,7 @@ int  InitAppliction(const char* winName,
 	glXMakeCurrent( winInfo.display, winInfo.win, winInfo.GLContext );
 
 	// Создаём vertex array object и буфер для вершин.
-	crtVertexArray();
+	CreateVertexArray();
 
 	// Создаём шейдер.
 	shader = CreateShader("vertex_shader.vs", "fragment_shader.fs");
@@ -234,13 +236,13 @@ void EventHandler(XEvent xev){
 					break;
 
 				case XK_Right :
-					start = getTime();
+					start = GetTime();
 
 					ResetCamera();
 					glDeleteTextures(1, &gTexInfo.textureID);
-					gTexInfo = getNextImage();
+					gTexInfo = GetNextImage();
 
-					end = getTime();
+					end = GetTime();
 					// Время на загрузку текстуры.
 					printf("%.2f s.\n", end - start);
 
@@ -254,7 +256,7 @@ void EventHandler(XEvent xev){
 				case XK_Left :
 					ResetCamera();
 					glDeleteTextures(1, &gTexInfo.textureID);
-					gTexInfo = getPrevImage();
+					gTexInfo = GetPrevImage();
 
 					// Анимация перелистывания.
 					if( isAnimationEnable )
@@ -267,7 +269,7 @@ void EventHandler(XEvent xev){
 	};
 }
 
-void crtVertexArray(){
+void CreateVertexArray(){
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray( vao );
 
@@ -358,23 +360,23 @@ void AnimateImageShow(GLboolean next){
 			 animLen = 0.3, 
 			 animProgress = 0.0;
 	GLdouble coef = -1/8.0;
-	animStart = getTime();
-	animProgress = getTime() - animStart;
+	animStart = GetTime();
+	animProgress = GetTime() - animStart;
 
 	if( next ){
 		while( animProgress < animLen ){
-			zOffset = (getTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
+			zOffset = (GetTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
 			yOffset = coef*zOffset*zOffset;
 			Render();
-			animProgress = getTime() - animStart;
+			animProgress = GetTime() - animStart;
 		}
 	}else {
 		while( animProgress < animLen ){
-			zOffset = (getTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
+			zOffset = (GetTime() - animStart)*winInfo.ratio/animLen - winInfo.ratio;
 			zOffset = -zOffset;
 			yOffset = coef*zOffset*zOffset;
 			Render();
-			animProgress = getTime() - animStart;
+			animProgress = GetTime() - animStart;
 		}
 	}
 }
