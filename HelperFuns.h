@@ -26,9 +26,14 @@ typedef struct{
 GLXContext CreateOpenGLContext(int ver_major, int ver_minor);
 
 // Функция CreateShader создаёт шейдерную программу из 
-// вершинного и фрагментного шейдеров.
+// файлов вершинного и фрагментного шейдеров.
 // Если произошла ошибка возвращается 0.
 GLuint CreateShader(const char *vertex_shader_path, const char *fragment_shader_path);
+
+// Функция CreateShaderStr создаёт шейдерную программу из 
+// строк,содержащих вершинный и фрагментный шейдеры.
+// Если произошла ошибка возвращается 0.
+GLuint CreateShaderStr(const char *vertex_shader, const char *fragment_shader);
 
 typedef struct{
 	GLuint textureID;

@@ -9,7 +9,7 @@ LIBS   := -lX11 -lGL -lfreeimage
 main.out : main.o math.o helperfuns.o strlist.o directorywalk.o
 	gcc $^ -o $@ $(LIBS) $(CFLAGS)
 
-main.o : main.c
+main.o : main.c HelperFuns.h Math.h DirectoryWalk.h Shaders.h
 	gcc -c $< -o $@ $(CFLAGS)
 
 helperfuns.o : HelperFuns.c HelperFuns.h

@@ -366,6 +366,67 @@ GLuint CreateShader(const char *vertex_shader_path, const char *fragment_shader_
 	return shader;
 }
 
+GLuint CreateShaderStr(const char *vertex_shader, const char *fragment_shader){
+	// Компилируем вер. шейдер.
+	GLuint verShader = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(verShader, 1, &vertex_shader, NULL);
+	glCompileShader(verShader);
+
+	// Проверём не возникли ли ошибки во время компиляции.
+	GLint result;
+	int infoLogLength;
+	glGetShaderiv(verShader, GL_COMPILE_STATUS, &result);
+	if( result == GL_FALSE ){
+		glGetShaderiv(verShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+		GLchar *errMessage = (GLchar*)malloc(infoLogLength + 1);
+		glGetShaderInfoLog(verShader, infoLogLength, NULL, errMessage);
+		errMessage[infoLogLength] = '\0';
+		fprintf(stderr, "Error in vertex shader: %s\n", errMessage);
+		free(errMessage);
+		return 0;
+	}
+
+	// Компилируем фраг. шейдер.
+	GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragShader, 1, &fragment_shader, NULL);
+	glCompileShader(fragShader);
+
+	// Проверём не возникли ли ошибки во время компиляции.
+	glGetShaderiv(fragShader, GL_COMPILE_STATUS, &result);
+	if( result == GL_FALSE ){
+		glGetShaderiv(fragShader, GL_INFO_LOG_LENGTH, &infoLogLength);
+		GLchar *errMessage = (GLchar*)malloc(infoLogLength + 1);
+		glGetShaderInfoLog(fragShader, infoLogLength, NULL, errMessage);
+		errMessage[infoLogLength] = '\0';
+		fprintf(stderr, "Error in fragment shader: %s\n", errMessage);
+		free(errMessage);
+		return 0;
+	}
+
+	// Создаём шейдерную программу.
+	GLuint shader = glCreateProgram();
+	glAttachShader(shader, verShader);
+	glAttachShader(shader, fragShader);
+	glLinkProgram(shader);
+
+	// Проверём не возникли ли ошибки во время компоновки.
+	glGetProgramiv(shader, GL_LINK_STATUS, &result);
+	if( result == GL_FALSE ){
+		glGetProgramiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+		GLchar *errMessage = (GLchar*)malloc(infoLogLength + 1);
+		glGetProgramInfoLog(shader, infoLogLength, NULL, errMessage);
+		errMessage[infoLogLength] = '\0';
+		fprintf(stderr, "Error in shader: %s\n", errMessage);
+		free(errMessage);
+		return 0;
+	}
+
+	glDeleteShader(verShader);
+	glDeleteShader(fragShader);
+
+	return shader;
+}
+
 static void FreeImageErrorHandler(FREE_IMAGE_FORMAT fif, const char* message);
 
 int IsSupTexture(const char* textureName){

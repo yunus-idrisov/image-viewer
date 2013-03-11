@@ -4,6 +4,7 @@
 #include "HelperFuns.h"
 #include "Math.h"
 #include "DirectoryWalk.h"
+#include "Shaders.h"
 
 WindowInfo winInfo = { 0, 0, 0, 800, 600, 800.0f/600.0f, GL_TRUE, GL_FALSE };
 
@@ -116,7 +117,7 @@ int  InitAppliction(const char* winName,
 	CreateVertexArray();
 
 	// Создаём шейдер.
-	shader = CreateShader("vertex_shader.vs", "fragment_shader.fs");
+	shader = CreateShaderStr(ver_shader, frag_shader);
 	if( shader == 0 ){
 		fprintf(stderr, "%s\n", "Shader isn't created.");
 		return 0;
