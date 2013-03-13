@@ -68,10 +68,10 @@ int main(int argc, char *argv[]){
 	}
 	*/
 
-	/*openWalkDir("/home/yunus/Pictures/");*/
-	OpenWalkDir("./images");
-	/*openWalkDir("/home/yunus/Desktop/100CANON");*/
-	/*openWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");*/
+	/*OpenWalkDir("/home/yunus/Pictures/");*/
+	/*OpenWalkDir("./images");*/
+	/*OpenWalkDir("/home/yunus/Desktop/100CANON");*/
+	OpenWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");
 	gTexInfo = GetNextImage();
 
 	XEvent xev;
