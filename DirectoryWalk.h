@@ -1,6 +1,7 @@
 #ifndef DIRECTORYWALK_H
 #define DIRECTORYWALK_H
-#include "HelperFuns.h"
+#include "GlobalTypes.h"
+#include "GlobalFuns.h"
 
 /*
  Функции этого заголовочного файла обеспечивают

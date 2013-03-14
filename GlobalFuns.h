@@ -1,26 +1,15 @@
-#ifndef HELPERFUNS_H
-#define HELPERFUNS_H
-#include <GL/gl.h>
+#ifndef GLOBAL_FUNS_H
+#define GLOBAL_FUNS_H
 #include <FreeImage.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <GL/glx.h>
+#include "DirectoryWalk.h"
+#include "GlobalTypes.h"
 #include "Math.h"
 
 // Создаёт окно. При ошибке возвращается 0.
 Window CreateWindow(GLuint width, GLuint height, const char* title);
-
-// Структура, которая хранит окно и некоторые его параметры.
-typedef struct{
-	Display* 	 display;
-	GLXContext	 GLContext;
-	Window 		 win;
-	GLuint 		 width;
-	GLuint 		 height;
-	GLfloat 	 ratio; 	  // width/height.
-	GLboolean 	 isRunning;
-	GLboolean 	 isLMBPressed;
-} WindowInfo;
 
 // Создаёт контекст OpenGL. При ошибке возвращается 0.
 GLXContext CreateOpenGLContext(int ver_major, int ver_minor);
@@ -34,13 +23,6 @@ GLuint CreateShader(const char *vertex_shader_path, const char *fragment_shader_
 // строк,содержащих вершинный и фрагментный шейдеры.
 // Если произошла ошибка возвращается 0.
 GLuint CreateShaderStr(const char *vertex_shader, const char *fragment_shader);
-
-typedef struct{
-	GLuint textureID;
-	GLuint width;
-	GLuint height;
-	char*  name;
-} TextureInfo;
 
 /*
  Создаёт текстуру OpenGL и возвращает её идентификатор,
@@ -95,4 +77,32 @@ int IsSupTexture(const char* textureName);
 // Время, отсчитваемое от Epoch.
 GLdouble GetTime();
 
-#endif // HELPERFUNS_H
+
+// Инициализация.
+int  InitAppliction(const char* winName,
+					GLuint width,
+					GLuint height,
+					GLuint glversion_major,
+					GLuint glversion_minor);
+// Рендер.
+void Render();
+// Обработчик событий.
+void EventHandler(XEvent xev);
+// Очистка.
+void CleanUp();
+
+void MouseWheelHandler(int wheelPos);
+void MousePosHandler(int x, int y);
+
+// Функция, которая осуществляет плавное 
+// перелиствание. Если входной параметр GL_TRUE, то
+// загружается следующее изображение.
+void AnimateImageShow(GLboolean next);
+
+// Функция для сбрасывания параметров камеры(положение и т.д).
+void ResetCamera();
+
+// Создаёт vertex array object и вершинный буфер.
+void CreateVertexArray();
+
+#endif // GLOBAL_FUNS_H
