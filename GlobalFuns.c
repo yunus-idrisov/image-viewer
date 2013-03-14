@@ -29,6 +29,7 @@ extern GLuint PVWID;
 
 extern TextureInfo gTexInfo;
 extern GLfloat imageScale;
+extern int mode;
 
 #define MAX_SHADER_SIZE		8192
 #define MAX_LINE_SIZE		128
@@ -487,7 +488,7 @@ TextureInfo LoadTexture(const char *texturePath){
 	// Функция для обработки ошибок.
 	FreeImage_SetOutputMessage(FreeImageErrorHandler);
 
-	TextureInfo texInfo = {0,0,0};
+	TextureInfo texInfo = {0,0,0,0};
 
 	FREE_IMAGE_FORMAT fif = 0;
 
@@ -521,12 +522,20 @@ TextureInfo LoadTexture(const char *texturePath){
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	// For bmp, jpg.
-
-	// Compressed image. Less memory but more time to load.
-	/*glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, imgData);*/
-
-	// Uncompressed image. More memory but less time to load.
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, imgData);
+	switch( mode ){
+		case 1 :
+			// Режим 1 соответствует параллельной загрузке текстур.
+			// Поэтому для работы с текстурами используются другие функции.
+			break;
+		case 2 :
+			// Несжатое изображение. Занимает больше памяти, но требует меньше времени для создания.
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, imgData);
+			break;
+		case 3 :
+			// Сжатое изображение. Занимает меньше памяти, но требует больше времени для создания.
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGB, width, height, 0, GL_BGR, GL_UNSIGNED_BYTE, imgData);
+			break;
+	}
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -572,7 +581,7 @@ FIBITMAP* GetFIBITMAP(const char *texturePath){
 }
 
 TextureInfo CreateGLTexture(FIBITMAP* bitmap){
-	TextureInfo texInfo = {0,0,0};
+	TextureInfo texInfo = {0,0,0,0};
 	if( bitmap == 0 )
 		return texInfo;
 

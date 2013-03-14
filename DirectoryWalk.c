@@ -10,6 +10,8 @@
 #include "DirectoryWalk.h"
 #include "StrList.h"
 
+extern int mode;
+
 static DIR* 		dir = 0;
 static StrList* 	imageNames = 0;
 static ListNode*	curImagePointer = 0;
@@ -101,7 +103,9 @@ int OpenWalkDir(const char* path){
 
 	curImagePointer = imageNames->head;
 
-	if( curImagePointer != 0 ){ // Если список изображений не пуст.
+	// Указатель на предыдущий и следующий изображения
+	// сохраняются только при параллельном режиме работы.
+	if( curImagePointer != 0 && mode == 1 ){ // Если список изображений не пуст.
 
 		ListNode* prevImagePointer = GetPrevNodeCycle( curImagePointer );
 		strcat(imagePath, prevImagePointer->str);
@@ -120,52 +124,81 @@ int OpenWalkDir(const char* path){
 
 TextureInfo GetNextImage(){
 	TextureInfo texInfo = {0,0,0,0};
-
 	void* status;
-	pthread_join(thread_id, &status);
-	texInfo = CreateGLTexture( pNextFIBITMAP );
 
-	imageToLoad = 2;
-	if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
-		fprintf(stderr, "Thread create error.\n");
+	switch( mode ){
+		case 1:
+			pthread_join(thread_id, &status);
+			texInfo = CreateGLTexture( pNextFIBITMAP );
 
-	ListNode* next = GetNextNodeCycle(curImagePointer);
-	texInfo.name = next->str;
+			imageToLoad = 2;
+			if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
+				fprintf(stderr, "Thread create error.\n");
+
+			ListNode* next = GetNextNodeCycle(curImagePointer);
+			texInfo.name = next->str;
+			break;
+
+		case 2 : case 3:
+			curImagePointer = GetNextNodeCycle( curImagePointer );
+			strcat(imagePath, curImagePointer->str);
+			texInfo = LoadTexture( imagePath );
+			imagePath[imagePathLen] = '\0';
+			texInfo.name = curImagePointer->str; 
+			break;
+	}
 	return texInfo;
 }
 
 TextureInfo GetPrevImage(){
 	TextureInfo texInfo = {0,0,0,0};
-
 	void* status;
-	pthread_join(thread_id, &status);
-	texInfo = CreateGLTexture( pPrevFIBITMAP );
 
-	imageToLoad = 0;
-	if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
-		fprintf(stderr, "Thread create error.\n");
+	switch( mode ){
+		case 1:
+			pthread_join(thread_id, &status);
+			texInfo = CreateGLTexture( pPrevFIBITMAP );
 
-	ListNode* prev = GetPrevNodeCycle(curImagePointer);
-	texInfo.name = prev->str;
+			imageToLoad = 0;
+			if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
+				fprintf(stderr, "Thread create error.\n");
+
+			ListNode* prev = GetPrevNodeCycle(curImagePointer);
+			texInfo.name = prev->str;
+			break;
+
+		case 2 : case 3:
+			curImagePointer = GetPrevNodeCycle( curImagePointer );
+			strcat(imagePath, curImagePointer->str);
+			texInfo = LoadTexture( imagePath );
+			imagePath[imagePathLen] = '\0';
+			texInfo.name = curImagePointer->str; 
+			break;
+	}
 	return texInfo;
 }
 
 int CloseWalkDir(){
-	void* status;
-	pthread_join( thread_id, NULL );
-
-	DeleteStrList(&imageNames);
-
-	if( closedir(dir) != 0 ){
-		fprintf(stderr, "closedir(...) error: ");
-		fprintf(stderr, "%s.\n", strerror(errno));
-		return -1;
+	if( mode == 1 ){
+		void* status;
+		pthread_join( thread_id, &status );
+		DeleteStrList(&imageNames);
+		if( closedir(dir) != 0 ){
+			fprintf(stderr, "closedir(...) error: %s.\n", strerror(errno));
+			return -1;
+		}
+		FreeImage_Unload( pPrevFIBITMAP );
+		pPrevFIBITMAP = 0;
+		FreeImage_Unload( pNextFIBITMAP );
+		pNextFIBITMAP = 0;
 	}
-
-	FreeImage_Unload( pPrevFIBITMAP );
-	pPrevFIBITMAP = 0;
-	FreeImage_Unload( pNextFIBITMAP );
-	pNextFIBITMAP = 0;
+	else{
+		DeleteStrList(&imageNames);
+		if( closedir(dir) != 0 ){
+			fprintf(stderr, "closedir(...) error: %s.\n", strerror(errno));
+			return -1;
+		}
+	}
 	return 1;
 }
 

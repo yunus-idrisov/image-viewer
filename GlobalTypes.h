@@ -4,6 +4,13 @@
 #include <X11/Xutil.h>
 #include <GL/glx.h>
 
+// Поддерживаемые форматы изображений.
+enum SUPPORTED_IMAGE_FORMATS{ 
+	NOT_SUPPORTED,
+	SUP_BMP,
+	SUP_JPG 
+};
+
 // Структура, которая хранит окно и некоторые его параметры.
 typedef struct{
 	Display* 	 display;

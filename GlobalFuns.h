@@ -35,32 +35,25 @@ TextureInfo LoadTexture(const char *texturePath);
 
 /*
  * Чтобы распараллелить загрузку текстуры делим функцию
- * loadTexture на две части: функция getFIBITMAP(...) 
+ * LoadTexture на две части: функция GetFIBITMAP(...) 
  * возвращает указатель на структуру FIBITMAP, переданного
  * в аргументе изображения. Далее из этой структуры
- * функция createGLTexture(...) создаёт и возвращает 
+ * функция CreateGLTexture(...) создаёт и возвращает 
  * структуру TextureInfo, которая и содержит созданную
  * текстуру.
- * Функция getFIBITMAP(...) возвращает 0, если по каким-
+ * Функция GetFIBITMAP(...) возвращает 0, если по каким-
  * либо причинам не удалось создать FIBITMAP.
- * createGLTexture(...) при возникновении ошибки устанавливает
+ * CreateGLTexture(...) при возникновении ошибки устанавливает
  * в поле textureID структуры TextureInfo значение 0.
  *
- * Необходимость деления функции loadTexture(...) связана
+ * Необходимость деления функции LoadTexture(...) связана
  * с тем, что контекст OpenGL в определенный момент времени
  * связан только с одним потоком. Следовательно в другом потоке
- * невозможно вызвать функции OpenGL. Функция createGLTexture(...)
- * вызывается в основном потоке, а getFIBITMAP(...) в побочном.
+ * невозможно вызвать функции OpenGL. Функция CreateGLTexture(...)
+ * вызывается в основном потоке, а GetFIBITMAP(...) в побочном.
  */
 FIBITMAP*	  GetFIBITMAP(const char *texturePath);
 TextureInfo	  CreateGLTexture(FIBITMAP* bitmap);
-
-// Поддерживаемые форматы изображений.
-enum SUPPORTED_IMAGE_FORMATS{ 
-	NOT_SUPPORTED,
-	SUP_BMP,
-	SUP_JPG 
-};
 
 /*
  Проверяет, поддерживается ли формат изображения textureName 
@@ -76,7 +69,6 @@ int IsSupTexture(const char* textureName);
 // Оптимизация ??????????????
 // Время, отсчитваемое от Epoch.
 GLdouble GetTime();
-
 
 // Инициализация.
 int  InitAppliction(const char* winName,
