@@ -47,6 +47,66 @@ void DeleteStrList(StrList** list){
 	*list = 0;
 }
 
+static void Merge(StrList* list, ListNode* l, ListNode* m, ListNode* h, int num){
+	char* str[num];
+	int cur = 0;
+	m = m->next;
+	ListNode* p1 = l;
+	ListNode* p2 = m;
+	while( p1 != m && p2 != h->next ){
+		if( strcmp(p1->str, p2->str) <= 0 ){
+			str[cur] = p1->str;
+			cur++;
+			p1 = p1->next;
+		}
+		else{
+			str[cur] = p2->str;
+			cur++;
+			p2 = p2->next;
+		}
+	}
+	while( p1 != m ){
+		str[cur] = p1->str;
+		cur++;
+		p1 = p1->next;
+	}
+	while( p2 != h->next ){
+		str[cur] = p2->str;
+		cur++;
+		p2 = p2->next;
+	}
+	for(int i = 0; i < num; i++){
+		l->str = str[i];
+		l = l->next;
+	}
+}
+
+static void MergeSort(StrList* list, ListNode* l, ListNode* h, int num){
+	int mid = num/2;
+	ListNode* m = l;
+	for(int i = 0; i < mid - 1; i++)
+		m = m->next;
+	if( num > 1 ){
+		MergeSort(list, l, m, num/2);
+		MergeSort(list, m->next, h, num - num/2);
+		Merge(list, l, m, h, num);
+	}
+}
+
+void SortStrList(StrList* list){
+	if( list == 0 )
+		return;
+	// Находим количество элементов в списке.
+	int elemCount = 0;
+	ListNode* p = list->head;
+	while( p != 0 ){
+		elemCount++;
+		p = p->next;
+	}
+	// Собственно сортировка.
+	MergeSort( list, list->head, list->tail, elemCount );
+}
+
 // Test.
 
 void ShowStrList(StrList* list){

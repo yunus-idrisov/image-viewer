@@ -97,6 +97,7 @@ int OpenWalkDir(const char* path){
 		if( (de->d_type == DT_REG) && IsSupTexture(de->d_name) )
 			AddStringToStrList(imageNames, de->d_name);
 	}
+	SortStrList(imageNames);
 
 	curImagePointer = imageNames->head;
 
@@ -113,7 +114,7 @@ int OpenWalkDir(const char* path){
 		imagePath[imagePathLen] = '\0';
 	}
 
-	/*ShowStrList(imageNames);*/
+	ShowStrList(imageNames);
 	return 1;
 }
 

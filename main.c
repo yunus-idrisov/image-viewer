@@ -5,6 +5,7 @@
 #include "Math.h"
 #include "DirectoryWalk.h"
 #include "Shaders.h"
+#include "StrList.h"
 
 WindowInfo winInfo = { 0, 0, 0, 800, 600, 800.0f/600.0f, GL_TRUE, GL_FALSE };
 
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]){
 
 	/*
 	if( argc == 2 ){
-		if( openWalkDir( argv[1] ) == -1 ){
+		if( OpenWalkDir( argv[1] ) == -1 ){
 			fprintf(stderr, "Error while opening path \"%s\"\n", argv[1]);
 			return 1;
 		}
@@ -69,9 +70,9 @@ int main(int argc, char *argv[]){
 	*/
 
 	/*OpenWalkDir("/home/yunus/Pictures/");*/
-	/*OpenWalkDir("./images");*/
+	OpenWalkDir("./images");
 	/*OpenWalkDir("/home/yunus/Desktop/100CANON");*/
-	OpenWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");
+	/*OpenWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");*/
 	gTexInfo = GetNextImage();
 
 	XEvent xev;

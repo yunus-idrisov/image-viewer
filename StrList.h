@@ -37,6 +37,9 @@ void AddStringToStrList(StrList* list, const char* str);
 */
 void DeleteStrList(StrList** list);
 
+// Сортировка списка.
+void SortStrList(StrList* list);
+
 // Test funs.
 void ShowStrList(StrList* list);
 void ShowRevStrList(StrList* list);
