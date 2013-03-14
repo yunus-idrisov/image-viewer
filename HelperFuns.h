@@ -39,6 +39,7 @@ typedef struct{
 	GLuint textureID;
 	GLuint width;
 	GLuint height;
+	char*  name;
 } TextureInfo;
 
 /*

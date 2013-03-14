@@ -114,12 +114,12 @@ int OpenWalkDir(const char* path){
 		imagePath[imagePathLen] = '\0';
 	}
 
-	ShowStrList(imageNames);
+	/*ShowStrList(imageNames);*/
 	return 1;
 }
 
 TextureInfo GetNextImage(){
-	TextureInfo texInfo = {0,0,0};
+	TextureInfo texInfo = {0,0,0,0};
 
 	void* status;
 	pthread_join(thread_id, &status);
@@ -129,11 +129,13 @@ TextureInfo GetNextImage(){
 	if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
 		fprintf(stderr, "Thread create error.\n");
 
+	ListNode* next = GetNextNodeCycle(curImagePointer);
+	texInfo.name = next->str;
 	return texInfo;
 }
 
 TextureInfo GetPrevImage(){
-	TextureInfo texInfo = {0,0,0};
+	TextureInfo texInfo = {0,0,0,0};
 
 	void* status;
 	pthread_join(thread_id, &status);
@@ -143,6 +145,8 @@ TextureInfo GetPrevImage(){
 	if( pthread_create(&thread_id, NULL, thread_func, NULL) != 0 )
 		fprintf(stderr, "Thread create error.\n");
 
+	ListNode* prev = GetPrevNodeCycle(curImagePointer);
+	texInfo.name = prev->str;
 	return texInfo;
 }
 

@@ -35,7 +35,7 @@ GLuint zOffsetID;
 GLuint yOffsetID;
 GLuint PVWID;
 
-TextureInfo gTexInfo = {0,0,0}; 				// Отображаемая текстура.
+TextureInfo gTexInfo = {0,0,0,0}; 				// Отображаемая текстура.
 GLfloat imageScale = 1.0f;						// Коэффициент масштабирования( [0.1, 1.0] ).
 
 int  InitAppliction(const char* winName,		// Инициализация.
@@ -69,8 +69,8 @@ int main(int argc, char *argv[]){
 	}
 	*/
 
-	/*OpenWalkDir("/home/yunus/Pictures/");*/
-	OpenWalkDir("./images");
+	OpenWalkDir("/home/yunus/Pictures/");
+	/*OpenWalkDir("./images");*/
 	/*OpenWalkDir("/home/yunus/Desktop/100CANON");*/
 	/*OpenWalkDir("/media/Disc_D/Copy_E/Photo/National Geographic/National Geographic 2011");*/
 	gTexInfo = GetNextImage();
@@ -187,6 +187,8 @@ void EventHandler(XEvent xev){
 			winInfo.height = wa.height;
 			winInfo.ratio = wa.width/(float)wa.height;
 			Mat4x4Ortho(&orthoMat, winInfo.ratio*imageScale, 1*imageScale, 0.1f, 10.0f);
+			XStoreName( winInfo.display, winInfo.win, gTexInfo.name );
+			XMapWindow( winInfo.display, winInfo.win );
 			Render();
 			break;
 
@@ -254,6 +256,8 @@ void EventHandler(XEvent xev){
 						AnimateImageShow(GL_TRUE);
 					zOffset = yOffset = 0.0f;
 					Render();
+					XStoreName( winInfo.display, winInfo.win, gTexInfo.name );
+					XMapWindow( winInfo.display, winInfo.win );
 					break;
 
 				case XK_Left :
@@ -266,6 +270,8 @@ void EventHandler(XEvent xev){
 						AnimateImageShow(GL_FALSE);
 					zOffset = yOffset = 0.0f;
 					Render();
+					XStoreName( winInfo.display, winInfo.win, gTexInfo.name );
+					XMapWindow( winInfo.display, winInfo.win );
 					break;
 			}
 			break;
