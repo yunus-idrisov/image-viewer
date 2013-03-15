@@ -147,10 +147,12 @@ TextureInfo GetNextImage(){
 
 		case 2 : case 3:
 			curImagePointer = GetNextNodeCycle( curImagePointer );
-			strcat(imagePath, curImagePointer->str);
-			texInfo = LoadTexture( imagePath );
-			imagePath[imagePathLen] = '\0';
-			texInfo.name = curImagePointer->str; 
+			if( curImagePointer != 0 ){
+				strcat(imagePath, curImagePointer->str);
+				texInfo = LoadTexture( imagePath );
+				imagePath[imagePathLen] = '\0';
+				texInfo.name = curImagePointer->str; 
+			}
 			break;
 	}
 	return texInfo;
@@ -176,10 +178,12 @@ TextureInfo GetPrevImage(){
 
 		case 2 : case 3:
 			curImagePointer = GetPrevNodeCycle( curImagePointer );
-			strcat(imagePath, curImagePointer->str);
-			texInfo = LoadTexture( imagePath );
-			imagePath[imagePathLen] = '\0';
-			texInfo.name = curImagePointer->str; 
+			if( curImagePointer != 0 ){
+				strcat(imagePath, curImagePointer->str);
+				texInfo = LoadTexture( imagePath );
+				imagePath[imagePathLen] = '\0';
+				texInfo.name = curImagePointer->str; 
+			}
 			break;
 	}
 	return texInfo;
