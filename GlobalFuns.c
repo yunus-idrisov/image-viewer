@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include <errno.h>
+#include <ctype.h>
 #include "Shaders.h"
 #include "icon_bitmap"
 
@@ -190,8 +193,8 @@ Window CreateWindow(GLuint width, GLuint height, const char* title){
 	size_hints->min_width = 300;
 	size_hints->min_height = 200;
 
-	char* window_name = title;
-	char* icon_name = "basicwin";
+	const char* window_name = title;
+	const char* icon_name = "basicwin";
 	XTextProperty windowName;
 	XTextProperty iconName;
 
@@ -720,7 +723,6 @@ void EventHandler(XEvent xev){
 	XWindowAttributes wa;
 	static int wheelPos = 0;
 	static int skipOne = 0;
-	GLdouble start, end;
 
 	switch( xev.type ){
 		case Expose :
@@ -784,15 +786,9 @@ void EventHandler(XEvent xev){
 					break;
 
 				case XK_Right :
-					start = GetTime();
-
 					ResetCamera();
 					glDeleteTextures(1, &gTexInfo.textureID);
 					gTexInfo = GetNextImage();
-
-					end = GetTime();
-					// Время на загрузку текстуры.
-					printf("%.2f s.\n", end - start);
 
 					// Анимация перелистывания.
 					if( isAnimationEnable )
@@ -930,5 +926,42 @@ void AnimateImageShow(GLboolean next){
 			Render();
 			animProgress = GetTime() - animStart;
 		}
+	}
+}
+
+extern char* optarg;
+extern int opterr;
+extern int optind;
+
+char* CmdLineParse(int argc, char* argv[]){
+	opterr = 0;
+	int path_fnd = 0;
+	char* path;
+	int fnd;
+	mode = 1;
+	while( (fnd = getopt(argc, argv, "p:m:")) != -1 ){
+		switch( fnd ){
+			case 'm':
+				errno = 0;
+				int m = strtol(optarg, NULL, 10);
+				if( (errno != 0) || (m < 1) || (m > 3) ){
+					printf("Invalid mode value. Mode set to default(1).\n");
+					mode = 1;
+				}
+				else
+					mode = m;
+				break;
+
+			case 'p':
+				path_fnd = 1;
+				path = optarg;
+				break;
+		}
+	}
+	if( path_fnd )
+		return path;
+	else{
+		fprintf(stderr, "Usage: %s -p path [-m [1|2|3|]]\n", argv[0]);
+		return NULL;
 	}
 }

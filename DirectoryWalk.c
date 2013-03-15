@@ -75,8 +75,7 @@ int OpenWalkDir(const char* path){
 	InitStrList(&imageNames);
 	dir = opendir(path);
 	if( dir == NULL ){
-		fprintf(stderr, "Error in open path \"%s\": ", path);
-		fprintf(stderr, "%s.\n", strerror(errno));
+		fprintf(stderr, "Error in open path \"%s\": %s\n", path, strerror(errno));
 		DeleteStrList(&imageNames);
 		return -1;
 	}
@@ -92,12 +91,18 @@ int OpenWalkDir(const char* path){
 	struct dirent* de;
 	// Считываем имена всех поддерживаемых изображений
 	// в список imageNames.
+	errno = 0;
 	while( (de = readdir(dir)) != NULL ){
 		// Если прочитанный файл обычный файл и является
 		// поддерживаемой текстурой, то добавить его в 
 		// список изображений.
 		if( (de->d_type == DT_REG) && IsSupTexture(de->d_name) )
 			AddStringToStrList(imageNames, de->d_name);
+	}
+	if( errno != 0 ){
+		fprintf(stderr, "Read path \"%s\" error: %s\n", path, strerror(errno));
+		DeleteStrList(&imageNames);
+		return -1;
 	}
 	SortStrList(imageNames);
 
@@ -136,7 +141,8 @@ TextureInfo GetNextImage(){
 				fprintf(stderr, "Thread create error.\n");
 
 			ListNode* next = GetNextNodeCycle(curImagePointer);
-			texInfo.name = next->str;
+			if( next != 0 )
+				texInfo.name = next->str;
 			break;
 
 		case 2 : case 3:
@@ -164,7 +170,8 @@ TextureInfo GetPrevImage(){
 				fprintf(stderr, "Thread create error.\n");
 
 			ListNode* prev = GetPrevNodeCycle(curImagePointer);
-			texInfo.name = prev->str;
+			if( prev != 0 )
+				texInfo.name = prev->str;
 			break;
 
 		case 2 : case 3:

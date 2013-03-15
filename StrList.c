@@ -106,25 +106,3 @@ void SortStrList(StrList* list){
 	// Собственно сортировка.
 	MergeSort( list, list->head, list->tail, elemCount );
 }
-
-// Test.
-
-void ShowStrList(StrList* list){
-	if( list == 0 )
-		return;
-	ListNode* p = list->head;
-	while( p != 0 ){
-		printf("%s\n", p->str);
-		p = p->next;
-	}
-}
-
-void ShowRevStrList(StrList* list){
-	if( list == 0 )
-		return;
-	ListNode* p = list->tail;
-	while( p != 0 ){
-		printf("%s\n", p->str);
-		p = p->prev;
-	}
-}

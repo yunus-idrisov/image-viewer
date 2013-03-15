@@ -39,6 +39,6 @@ GLfloat imageScale = 1.0f;
  * Чем выше номер режима, тем меньше памяти
  * необходимо программе.
  */
-int mode = 1;
+int mode = 3;
 
 #endif // GLOBAL_VARS_H
